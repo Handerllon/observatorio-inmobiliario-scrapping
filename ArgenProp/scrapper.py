@@ -85,7 +85,7 @@ try:
         driver.get(url)
 
         # Check for CAPTCHA, we handle it manually
-        if "verifying you are human. this may take a few seconds." in driver.page_source.lower():
+        if "confirm you are human" in driver.page_source.lower():
             print("CAPTCHA detected. Please solve it manually.")
             input("Press Enter after solving the CAPTCHA...")
 
