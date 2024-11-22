@@ -96,8 +96,6 @@ try:
         # We delegate html analysis to BeautifulSoup
         print("Extracting property cards...")
         raw_html = driver.page_source
-        with open("output/test_output.html", "w") as f:
-            f.write(raw_html)
         out_values.extend(bs4_parse_raw_html(raw_html))
 
 finally:
