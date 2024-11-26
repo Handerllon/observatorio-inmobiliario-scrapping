@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 import pandas as pd
 
+FILE_PATH = "output/output_argenprop_22112024.csv"
+
 # Prepare the batch_write_item request
 def batch_write_items(client, table_name, items):
     request_items = {
@@ -24,7 +26,7 @@ def batch_write_items(client, table_name, items):
     return response
 
 # Leemos el archivo que vamos a querer subir a la tabla
-df = pd.read_csv("output/output_argenprop_22112024.csv")
+df = pd.read_csv(FILE_PATH)
 # Hacemos un rename por un error en el scrapper
 df.rename(columns={'zonaprop_code': 'argenprop_code'}, inplace=True)
 

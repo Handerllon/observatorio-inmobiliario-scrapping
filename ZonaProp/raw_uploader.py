@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 import pandas as pd
 
+FILE_PATH = "output/stock_zonaprop_19102024.csv"
+
 # Prepare the batch_write_item request
 def batch_write_items(client, table_name, items):
     request_items = {
@@ -24,7 +26,7 @@ def batch_write_items(client, table_name, items):
     return response
 
 # Leemos el archivo que vamos a querer subir a la tabla
-df = pd.read_csv("output/stock_zonaprop_19102024.csv")
+df = pd.read_csv(FILE_PATH)
 
 # Dropeamos duplicados del dataframe
 print(f"Original data: {df.shape}")
