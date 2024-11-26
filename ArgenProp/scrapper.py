@@ -55,7 +55,7 @@ def bs4_parse_raw_html(raw_html):
             description = card.find('h2', class_='card__title').text.strip() if card.find('h2', class_='card__title') else None
             return_list.append({
                 'property_url': property_url,
-                'zonaprop_code': property_url.split("-")[-1],
+                'argenprop_code': property_url.split("-")[-1],
                 'price': price,
                 'expenses': expenses,
                 'address': address,
