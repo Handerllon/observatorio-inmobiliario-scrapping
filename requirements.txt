@@ -71,3 +71,4 @@ wcwidth==0.2.13
 websocket-client==1.8.0
 websockets==14.1
 wsproto==1.2.0
+pycaret==3.3.2
