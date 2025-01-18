@@ -3,6 +3,7 @@
 .env
 *.html
 .DS_Store
+**/*/downloaded_files/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
