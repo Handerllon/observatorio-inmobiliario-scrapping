@@ -3,10 +3,14 @@ import pandas as pd
 from time import sleep
 import undetected_chromedriver as uc
 from selenium_stealth import stealth
+from seleniumbase import Driver
+
+
+OUT_FILE = "stock_argenprop_12012025.csv"
 
 def gen_driver():
     try:
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.140 Safari/537.36"
+        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36"
         chrome_options = uc.ChromeOptions()
         #chrome_options.add_argument('--headless=new')
         #chrome_options.add_argument("--start-maximized")
@@ -15,7 +19,9 @@ def gen_driver():
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("user-agent={}".format(user_agent))
-        driver = uc.Chrome(options=chrome_options)
+        #driver = uc.Chrome(options=chrome_options)
+        driver = Driver(uc=True, browser="chrome", agent=user_agent, headless=False, undetectable=True, incognito=True)
+        return driver
         stealth(driver,
                 languages=["en-US", "en"],
                 vendor="Google Inc.",
@@ -85,6 +91,7 @@ try:
         driver.get(url)
 
         # Check for CAPTCHA, we handle it manually
+        print(driver.page_source.lower())
         if "confirm you are human" in driver.page_source.lower():
             print("CAPTCHA detected. Please solve it manually.")
             input("Press Enter after solving the CAPTCHA...")
@@ -100,5 +107,5 @@ try:
 
 finally:
     df = pd.DataFrame(out_values)
-    df.to_csv("output/output.csv", index=False)
+    df.to_csv("output/{}".format(OUT_FILE), index=False)
     driver.quit()
