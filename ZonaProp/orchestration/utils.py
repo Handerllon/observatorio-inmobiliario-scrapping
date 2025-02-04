@@ -2,6 +2,7 @@ import datetime
 import pandas as pd
 import requests
 import numpy as np
+from io import StringIO
 
 def log(level, message):
     """
@@ -26,19 +27,28 @@ def log(level, message):
 
 ### TODO: Una vez que tengamos el entorno de AWS corriendo constantemente podemos
 ### ya sea enviarlo a una tabla de DynamoDB o a un bucket de S3
-def generate_raw_file(in_path, out_path):
-    df = pd.read_csv(in_path)
+def generate_raw_file(in_path, out_path, s3_client, bucket_name):
+    response = s3_client.get_object(Bucket=bucket_name, Key=in_path)
+    csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
+    df = pd.read_csv(StringIO(csv_data))
+
     log("INFO", f"Generating RAW file from {in_path}")
     log("INFO", f"Original data: {df.shape}")
     df.drop_duplicates(subset=['zonaprop_code'], keep='first', inplace=True)
     log("INFO", f"Unique data: {df.shape}")
 
     log("INFO", "STOCK - RAW file processing completed. Generating RAW file...")
-    df.to_csv(out_path, index=False)
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+
+    s3_client.put_object(Bucket=bucket_name, Key=out_path, Body=csv_buffer.getvalue())
 
 ### TODO: Idem lo de arriba. Por ahora generamos archivos locales
-def generate_stg_file(in_path, out_path):
-    df = pd.read_csv(in_path)
+def generate_stg_file(in_path, out_path, s3_client, bucket_name):
+    response = s3_client.get_object(Bucket=bucket_name, Key=in_path)
+    csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
+    df = pd.read_csv(StringIO(csv_data))
+
     log("INFO", f"Generating STG file from {in_path}")
 
     try:
@@ -90,8 +100,10 @@ def generate_stg_file(in_path, out_path):
     df['antiquity'] = np.nan
 
     log("INFO", "RAW - STG file processing completed. Generating STG file...")
-    df.to_csv(out_path, index=False)
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
 
+    s3_client.put_object(Bucket=bucket_name, Key=out_path, Body=csv_buffer.getvalue())
 
     
 
