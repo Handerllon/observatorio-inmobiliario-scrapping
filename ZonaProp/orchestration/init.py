@@ -24,7 +24,7 @@ STOCK_FILE = f"STOCK_ZonaProp_{date}.csv"
 RAW_FILE = f"RAW_ZonaProp_{date}.csv"
 STG_FILE = f"STG_ZonaProp_{date}.csv"
 
-PAGES_SCRAPPED = 10
+PAGES_SCRAPPED = 500
 
 OUT_DIR = "output"
 
