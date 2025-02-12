@@ -6,6 +6,16 @@ import os
 import sklearn
 print(sklearn.__version__)
 
+"""
+    Referencia: etl/utils.py
+
+        input_data["total_area"]
+        input_data["rooms"],
+        input_data["bedrooms"],
+        input_data["bathrooms"],
+        input_data["garages"],
+        input_data["antiquity"], 
+"""
 
 def load_model_from_local(model_file):
     try:
@@ -15,8 +25,10 @@ def load_model_from_local(model_file):
         raise Exception(f"Error loading model: {str(e)}")
     
 # Load the model on Lambda cold start (once per instance lifecycle)
-#MODEL_FILE = "model_wo_ohe_2024-12-04.joblib" # 4 features
+# Models wo (without one-hot-encoding)
+# MODEL_FILE = "model_wo_ohe_2024-12-04.joblib" # 4 features
 MODEL_FILE = "model_wo_ohe_2024-12-01.joblib"  # 6 features
+
 MODEL = load_model_from_local(MODEL_FILE)
 
 def validate_input(input_data):
@@ -30,12 +42,12 @@ def validate_input(input_data):
 def predict(input_data):
     validate_input(input_data)
     input_features = np.array([
-        input_data["antiquity"],
-        input_data["bedrooms"],
-        input_data["garages"],
-        input_data["bathrooms"],
+        input_data["total_area"],
         input_data["rooms"],
-        input_data["total_area"]
+        input_data["bedrooms"],
+        input_data["bathrooms"],
+        input_data["garages"],
+        input_data["antiquity"]
     ]).reshape(1, -1)
     prediction = MODEL.predict(input_features)
     print(f"Prediction: {prediction}")

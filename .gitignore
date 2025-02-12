@@ -2,6 +2,7 @@
 *.csv
 .env
 *.html
+*.zip
 
 # Model files
 *.joblib
