@@ -3,7 +3,6 @@ import numpy as np
 
 def clean_data(df):
 
-    print("Hi")
     df_to_clean = df.copy(deep=True)
     # Hay varias columnas que para la porción de ML no nos interesan. Las vamos a borrar
     try:
