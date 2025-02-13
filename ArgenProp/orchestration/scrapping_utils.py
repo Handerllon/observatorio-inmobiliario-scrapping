@@ -7,6 +7,7 @@ from seleniumbase import Driver
 
 ### Custom Imports
 from utils import log
+from io import StringIO
 
 DOMAIN_URL = "https://www.argenprop.com.ar"
 BASE_URL = "https://www.argenprop.com/departamentos/alquiler/capital-federal"
@@ -56,7 +57,7 @@ def bs4_parse_raw_html(raw_html):
             })
     return return_list
 
-def start_scrapping(out_file, iterations):
+def start_scrapping(out_file, iterations, s3_client, bucket_name):
     driver = gen_driver()
     out_values = list()
 
@@ -100,5 +101,9 @@ def start_scrapping(out_file, iterations):
 
     log("INFO", "Scraping process completed! Generating STOCK file...")
     df = pd.DataFrame(out_values)
-    df.to_csv(out_file, index=False)
+    csv_buffer = StringIO()
+    df.to_csv(csv_buffer, index=False)
+
+    s3_client.put_object(Bucket=bucket_name, Key=out_file, Body=csv_buffer.getvalue())
+
     driver.quit()

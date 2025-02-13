@@ -1,10 +1,56 @@
 import pandas as pd
 import numpy as np
+from dotenv import load_dotenv
+import boto3
+import os
+from io import StringIO
+from datetime import datetime
 
-INPUT_FILE = "tmp/full_stg_extract_2025-01-22.csv"
-OUTPUT_FILE = "tmp/full_stg_extract_2025-01-22cleaned.csv"
+date = datetime.now().strftime('%d%m%Y')
+CLEANED_FILE = f"full_stg_extract_cleaned_{date}.csv"
+OUTPUT_FILE = "machine_learning/data/full/" + CLEANED_FILE
 
-df = pd.read_csv(INPUT_FILE)
+load_dotenv()
+session = boto3.Session(
+    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY_ID')
+)
+s3_client = session.client('s3')
+BUCKET_NAME = os.getenv('BUCKET_NAME')
+
+# Obtenemos los últimos archivos de cada una de las fuentes
+def extract_date(file):
+    date_part = file.split('_')[-1].replace('.csv', '')  # Get "04022025"
+    return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
+
+# Empezamos por ZonaProp
+files = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
+sub_files = list()
+for file in files["Contents"]:
+    if ("/ZonaProp/STG" in file["Key"]) and (".csv" in file["Key"]):
+        sub_files.append(file["Key"])
+
+sorted_files = sorted(sub_files, key=extract_date, reverse=True)
+zonaprop_file = sorted_files[:1][0]
+print("Using zonaprop file {}".format(zonaprop_file))
+
+for file in files["Contents"]:
+    if ("/ArgenProp/STG" in file["Key"]) and (".csv" in file["Key"]):
+        sub_files.append(file["Key"])
+
+sorted_files = sorted(sub_files, key=extract_date, reverse=True)
+argenprop_file = sorted_files[:1][0]
+print("Using argenprop file {}".format(argenprop_file))
+
+response = s3_client.get_object(Bucket=BUCKET_NAME, Key=zonaprop_file)
+csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
+df_zonaprop = pd.read_csv(StringIO(csv_data))
+
+response = s3_client.get_object(Bucket=BUCKET_NAME, Key=argenprop_file)
+csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
+df_argenprop = pd.read_csv(StringIO(csv_data))
+
+df = pd.concat([df_zonaprop, df_argenprop], ignore_index=True)
 
 # Hay varias columnas que para la porción de ML no nos interesan. Las vamos a borrar
 try:
@@ -155,6 +201,9 @@ df.drop(columns=["expenses"], inplace=True)
 df.drop(columns=["description"], inplace=True)
 
 # Enviamos info a un archivo csv para trabajar en el siguiente paso
-df.to_csv(OUTPUT_FILE, index=False)
+csv_buffer = StringIO()
+df.to_csv(csv_buffer, index=False)
 
+print("Uploading data to S3")
+s3_client.put_object(Bucket=BUCKET_NAME, Key=OUTPUT_FILE, Body=csv_buffer.getvalue())
 
