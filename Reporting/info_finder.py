@@ -57,6 +57,8 @@ Theatre -> Sitios de Interes
 Cinema -> Sitios de Interes
 Ice_cream -> Sitios de Interes
 Library -> Sitios de Interes
+Community_centre -> Sitios de Interes
+Arts_centre -> Sitios de Interes
 
 Townhall -> Edificios Administrativos
 Courthouse -> Edificios Administrativos
@@ -68,8 +70,24 @@ University -> Instituciones Educativas
 
 Clinic -> Centros de Salud
 
-
+Restaurant -> Restaurantes, Cafeterías y Bares
+Cafe -> Restaurantes, Cafeterías y Bares
+Ice_cream -> Restaurantes, Cafeterías y Bares
+Pub -> Restaurantes, Cafeterías y Bares
+Fast_food -> Restaurantes, Cafeterías y Bares
+Bar -> Restaurantes, Cafeterías y Bares
 """
+
+INPUT_DATA = {
+  "total_area": 40,
+  "rooms": 2,
+  "bedrooms": 1,
+  "bathrooms": 1,
+  "garages": 1,
+  "antiquity": 50,
+  "neighborhood": "RECOLETA",
+  "street": "Posadas 1725",
+}
 
 def obtener_coordenadas(direccion):
     """ Convierte una dirección en coordenadas (latitud, longitud) usando Nominatim """
@@ -105,7 +123,6 @@ def consultar_overpass(lat, lon):
 def obtener_lugares_cercanos(direccion):
     """ Obtiene los lugares cercanos de interés a una dirección dada """
     coordenadas = obtener_coordenadas(direccion)
-    print(coordenadas)
     if not coordenadas:
         print("No se pudo obtener la ubicación.")
         return
@@ -125,14 +142,52 @@ def obtener_lugares_cercanos(direccion):
 
     return resultados
 
-direccion = "Posadas 1725, CABA, Argentina"
+def procesar_resultados(lugares_cercanos):
+
+    output_data = {
+        "transporte": {"total": 0, "data": []},
+        "sitios_interes": {"total": 0, "data": []},
+        "edificios_administrativos": {"total": 0, "data": []},
+        "instituciones_educativas": {"total": 0, "data": []},
+        "centros_salud": {"total": 0, "data": []},
+        "restaurantes": {"total": 0, "data": []}
+    }
+
+    for categoria, lugares in lugares_cercanos.items():
+        if categoria == "Desconocido":
+            for lugar in lugares:
+                if "Línea" in lugar[0]:
+                    output_data["transporte"]["total"] += 1
+                    output_data["transporte"]["data"].append(lugar)
+        elif categoria in ["theatre", "cinema", "library", "community_centre", "arts_centre"]:
+            for lugar in lugares:
+                output_data["sitios_interes"]["total"] += 1
+                output_data["sitios_interes"]["data"].append(lugar)
+        elif categoria in ["townhall", "courthouse"]:
+            for lugar in lugares:
+                output_data["edificios_administrativos"]["total"] += 1
+                output_data["edificios_administrativos"]["data"].append(lugar)
+        elif categoria in ["college", "kindergarten", "school", "university"]:
+            for lugar in lugares:
+                output_data["instituciones_educativas"]["total"] += 1
+                output_data["instituciones_educativas"]["data"].append(lugar)
+        elif categoria == "clinic":
+            for lugar in lugares:
+                output_data["centros_salud"]["total"] += 1
+                output_data["centros_salud"]["data"].append(lugar)
+        elif categoria in ["restaurant", "cafe", "ice_cream", "pub", "fast_food", "bar"]:
+            for lugar in lugares:
+                output_data["restaurantes"]["total"] += 1
+                output_data["restaurantes"]["data"].append(lugar)
+
+    return output_data
+
+direccion = "{} ,{} ,CABA , Argentina".format(INPUT_DATA["street"], INPUT_DATA["neighborhood"])
 lugares_cercanos = obtener_lugares_cercanos(direccion)
 
-for categoria, lugares in lugares_cercanos.items():
-    print(f"\n{categoria.capitalize()}:")
-    for nombre, lat, lon in lugares:
-        print(f" - {nombre} (Lat: {lat}, Lon: {lon})")
+results = procesar_resultados(lugares_cercanos)
 
-
-for categoria, lugares in lugares_cercanos.items():
-    print(f"\n{categoria.capitalize()}:")
+for categoria, data in results.items():
+    print(f"{categoria}: {data['total']}")
+    for lugar in data["data"]:
+        print(f"\t- {lugar[0]}: {lugar[1]}, {lugar[2]}) ")

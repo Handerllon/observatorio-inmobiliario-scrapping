@@ -5,6 +5,7 @@ import boto3
 import os
 from io import StringIO
 from datetime import datetime
+from difflib import get_close_matches
 
 date = datetime.now().strftime('%d%m%Y')
 CLEANED_FILE = f"full_stg_extract_cleaned_{date}.csv"
@@ -199,6 +200,81 @@ df.drop(columns=["expenses"], inplace=True)
 
 # Borramos la descripción ya que no la vamos a usar en el modelo
 df.drop(columns=["description"], inplace=True)
+
+# Normalizamos la información de barrios para que sea más fácil de usar en el modelo
+# Función para mapear los barrios
+def map_neighborhood(neighborhood):
+    # Lista de valores permitidos
+    valid_neighborhoods = [
+        'ALMAGRO', 'BALVANERA', 'BELGRANO', 'CABALLITO', 'COLEGIALES', 'DEVOTO',
+        'FLORES', 'MONTSERRAT', 'NUNEZ', 'PALERMO', 'PARQUE PATRICIOS', 'PUERTO MADERO',
+        'RECOLETA', 'RETIRO', 'SAN NICOLAS', 'SAN TELMO', 'VILLA CRESPO', 'VILLA DEL PARQUE', 'VILLA URQUIZA'
+    ]
+
+    neighborhood = neighborhood.upper()  # Convertimos a mayúsculas para estandarizar
+    
+    # Mapeos directos conocidos
+    manual_mappings = {
+        'MONSERRAT': 'MONTSERRAT',
+        'NUÑEZ': 'NUNEZ',
+        'CONGRESO': 'BALVANERA',
+        'BARRIO NORTE': 'RECOLETA',
+        'TRIBUNALES': 'SAN NICOLAS',
+        'MICROCENTRO': 'SAN NICOLAS',
+        'CENTRO / MICROCENTRO': 'SAN NICOLAS',
+        'BARRACAS': 'PARQUE PATRICIOS',
+        'CONSTITUCIÓN': 'SAN TELMO',
+        'POMPEYA': 'PARQUE PATRICIOS',
+        'MATADEROS': 'FLORES',
+        'LINIERS': 'FLORES',
+        'VERSALLES': 'VILLA URQUIZA',
+        'VILLA SOLDATI': 'PARQUE PATRICIOS',
+        'VILLA RIACHUELO': 'PARQUE PATRICIOS',
+        'VILLA LUGANO': 'PARQUE PATRICIOS',
+        'LA PATERNAL': 'VILLA CRESPO',
+        'COGHLAN': 'BELGRANO',
+        'LAS CAÑITAS': 'BELGRANO',
+        'VILLA PUEYRREDÓN': 'VILLA URQUIZA',
+        'BOTÁNICO': 'PALERMO',
+        'BOEDO': 'ALMAGRO',
+        'CHACARITA': 'VILLA CRESPO',
+        'PALERMO HOLLYWOOD': 'PALERMO',
+        'SAN CRISTOBAL': 'BALVANERA',
+        'SAAVEDRA': 'NUNEZ',
+        'AGRONOMÍA': 'VILLA DEL PARQUE',
+        'BARRIO PARQUE': 'PALERMO',
+        'ONCE': 'BALVANERA',
+        'BARRIO CHINO': 'BELGRANO',
+        'LOMAS DE NÚÑEZ': 'NUNEZ',
+        'LA BOCA': 'SAN TELMO',
+        'MONTE CASTRO': 'DEVOTO',
+        'CID CAMPEADOR': 'VILLA CRESPO',
+        'BARRIO PARQUE GENERAL BELGRANO': 'BELGRANO',
+        'PRIMERA JUNTA': 'CABALLITO',
+        'VELEZ SARSFIELD': 'FLORES',
+        'PARQUE AVELLANEDA': 'FLORES',
+        'DISTRITO QUARTIER': 'PUERTO MADERO',
+        'TEMPERLEY': 'FLORES',  # No está en CABA, asignado al más cercano
+        'CATALINAS': 'RETIRO',
+        'LOS PERALES': 'FLORES',
+        'NAÓN': 'VILLA DEL PARQUE',
+        'PATERNAL': 'VILLA CRESPO',
+        'BOCA': 'SAN TELMO',
+        'CONSTITUCION': 'SAN TELMO',
+        'DEPARTAMENTO EN VENTA EN CABALLITO': 'CABALLITO',
+        'DEPARTAMENTO EN VENTA EN PALERMO': 'PALERMO',
+        'AGRONOMIA': 'VILLA DEL PARQUE'
+    }
+    
+    if neighborhood in manual_mappings:
+        return manual_mappings[neighborhood]
+    
+    # Buscar coincidencias aproximadas
+    match = get_close_matches(neighborhood, valid_neighborhoods, n=1, cutoff=0.6)
+    return match[0] if match else 'OTRO'
+
+df['neighborhood'] = df['neighborhood'].apply(map_neighborhood)
+df = df.loc[df["neighborhood"] != "OTRO"]
 
 # Enviamos info a un archivo csv para trabajar en el siguiente paso
 csv_buffer = StringIO()

@@ -1,0 +1,510 @@
+{
+    "total_properties": 8471,
+    "total_properties_neighborhood": 1425,
+    "average_price_neighborhood": 595311.298245614,
+    "min_price_neighborhood": 7000.0,
+    "max_price_neighborhood": 1560000.0,
+    "total_properties_amb_neighborhood": 606,
+    "average_price_amb_neighborhood": 594448.1848184818,
+    "min_price_amb_neighborhood": 280000.0,
+    "max_price_amb_neighborhood": 1560000.0,
+    "new_properties_since_last_report_neighborhood": 423,
+    "removed_properties_since_last_report_neighborhood": 478,
+    "new_properties_since_last_report": 2586,
+    "removed_properties_since_last_report": 2975,
+    "nearby_places_data": {
+        "transporte": {
+            "total": 43,
+            "data": [
+                [
+                    "Línea H",
+                    0,
+                    0
+                ],
+                [
+                    "Línea H",
+                    0,
+                    0
+                ],
+                [
+                    "Línea H",
+                    0,
+                    0
+                ],
+                [
+                    "Línea H",
+                    0,
+                    0
+                ],
+                [
+                    "Línea H",
+                    0,
+                    0
+                ],
+                [
+                    "Línea H",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Belgrano Norte: Retiro → Villa Rosa",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Mitre: José León Suárez → Retiro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Mitre: Bartolomé Mitre → Retiro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea H: Facultad de Derecho → Hospitales",
+                    0,
+                    0
+                ],
+                [
+                    "Línea San Martín: Retiro → Pilar",
+                    0,
+                    0
+                ],
+                [
+                    "Línea San Martín: Pilar → Retiro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Mitre: Retiro → Bartolomé Mitre",
+                    0,
+                    0
+                ],
+                [
+                    "Línea H: Hospitales → Facultad de Derecho",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Mitre: Retiro → José León Suárez",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Belgrano Norte: Villa Rosa → Retiro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 130: La Boca → Munro → Boulogne",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 130: Boulogne → Munro → La Boca",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 130: Boulogne → x Panamericana → La Boca",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 130: La Boca → x Panamericana → Boulogne",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 124: Sáenz Peña → Facultad de Derecho",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 124: Facultad de Derecho → Sáenz Peña",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 110 - Ramal 1: Villa Martelli → Facultad de Derecho",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 110 - Ramal 2: Villa Martelli → Facultad de Derecho",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 110 - Ramal 1: Facultad de Derecho → Villa Martelli",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 110 - Ramal 2: Facultad de Derecho → Villa Martelli",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 67: Munro → Constitución",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 67: Constitución → Munro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Mitre: Retiro → Tigre",
+                    0,
+                    0
+                ],
+                [
+                    "Línea Mitre: Tigre → Retiro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 93: Avellaneda → x Sívori → Munro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 93: Avellaneda → Centro Comercial → Munro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 93: Avellaneda → Villa Urquiza",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 93: Munro → x Sívori → Avellaneda",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 93: Munro → Centro Comercial → Avellaneda",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 93: Villa Urquiza → Avellaneda",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 92: Retiro → Ruta 4 y Olimpo",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 92: Ruta 4 y Olimpo → Retiro",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 61: Constitución → Once → Retiro → Constitución",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 62: Constitución → Retiro → Once → Constitución",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 102: Palermo → Barracas",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 17: Recoleta → Wilde",
+                    0,
+                    0
+                ],
+                [
+                    "Línea 17: Wilde → Recoleta",
+                    0,
+                    0
+                ]
+            ]
+        },
+        "sitios_interes": {
+            "total": 4,
+            "data": [
+                [
+                    "Auditorio El Aleph",
+                    -34.5861571,
+                    -58.3923429
+                ],
+                [
+                    "Centro de Exposiciones",
+                    0,
+                    0
+                ],
+                [
+                    "Centro Cultural Recoleta",
+                    0,
+                    0
+                ],
+                [
+                    "Sin nombre",
+                    0,
+                    0
+                ]
+            ]
+        },
+        "edificios_administrativos": {
+            "total": 0,
+            "data": []
+        },
+        "instituciones_educativas": {
+            "total": 5,
+            "data": [
+                [
+                    "Colegio Las Cumbres",
+                    -34.5895313,
+                    -58.39076
+                ],
+                [
+                    "Escuela Primaria Común 21 Angel Gallardo",
+                    -34.5888331,
+                    -58.3903651
+                ],
+                [
+                    "Jardín de Infantes Nucleado C (EPCjc 21/01°)",
+                    -34.5888204,
+                    -58.390349
+                ],
+                [
+                    "Escuela Técnica de Maquinistas",
+                    0,
+                    0
+                ],
+                [
+                    "Facultad de Derecho",
+                    0,
+                    0
+                ]
+            ]
+        },
+        "centros_salud": {
+            "total": 0,
+            "data": []
+        },
+        "restaurantes": {
+            "total": 41,
+            "data": [
+                [
+                    "Hard Rock Cafe",
+                    -34.5857632,
+                    -58.393157
+                ],
+                [
+                    "Club de la Birra",
+                    -34.5879376,
+                    -58.3908991
+                ],
+                [
+                    "Sivela 465",
+                    -34.5885425,
+                    -58.3895211
+                ],
+                [
+                    "New Port",
+                    -34.5891962,
+                    -58.3927128
+                ],
+                [
+                    "Nonna Angiulina",
+                    -34.5886583,
+                    -58.3920979
+                ],
+                [
+                    "Pasta Recoleta Bodegon",
+                    -34.5887651,
+                    -58.3922339
+                ],
+                [
+                    "Veggie Medio Oriente",
+                    -34.5886987,
+                    -58.3921516
+                ],
+                [
+                    "urban",
+                    -34.5889827,
+                    -58.3925946
+                ],
+                [
+                    "El Sanjuanino",
+                    -34.5872658,
+                    -58.3873858
+                ],
+                [
+                    "La Pécora Nera",
+                    -34.5895254,
+                    -58.3911588
+                ],
+                [
+                    "Serafin",
+                    -34.5869316,
+                    -58.3855919
+                ],
+                [
+                    "Fervor",
+                    -34.5873455,
+                    -58.3872619
+                ],
+                [
+                    "La Rambla",
+                    -34.5868142,
+                    -58.388439
+                ],
+                [
+                    "MARQUES DE RISCAL",
+                    -34.5887275,
+                    -58.3896807
+                ],
+                [
+                    "Sin nombre",
+                    -34.5867475,
+                    -58.3862962
+                ],
+                [
+                    "Cümen- Cümen",
+                    -34.5888252,
+                    -58.3915357
+                ],
+                [
+                    "Sin nombre",
+                    -34.5889113,
+                    -58.3911371
+                ],
+                [
+                    "MARTI barra",
+                    -34.5884567,
+                    -58.3862576
+                ],
+                [
+                    "La Fernetería",
+                    -34.5837948,
+                    -58.3922178
+                ],
+                [
+                    "La Parolaccia",
+                    -34.5880129,
+                    -58.390996
+                ],
+                [
+                    "Café La Biela",
+                    -34.5878729,
+                    -58.3908251
+                ],
+                [
+                    "Colette",
+                    -34.5837567,
+                    -58.3923193
+                ],
+                [
+                    "Distal Cafe",
+                    -34.5890031,
+                    -58.392621
+                ],
+                [
+                    "Starbucks",
+                    -34.5859655,
+                    -58.3915493
+                ],
+                [
+                    "Persicco",
+                    -34.5877052,
+                    -58.3906808
+                ],
+                [
+                    "Sin nombre",
+                    -34.5862813,
+                    -58.3930583
+                ],
+                [
+                    "Sotovoce cafe",
+                    -34.5861119,
+                    -58.387422
+                ],
+                [
+                    "Confitera Monet",
+                    -34.5893505,
+                    -58.3889537
+                ],
+                [
+                    "Magazzino",
+                    -34.5857612,
+                    -58.3940205
+                ],
+                [
+                    "Le Pain Quotidien",
+                    -34.5881156,
+                    -58.38624
+                ],
+                [
+                    "La Panera Rosa",
+                    -34.5876119,
+                    -58.3906316
+                ],
+                [
+                    "Bacara",
+                    -34.5856405,
+                    -58.3937526
+                ],
+                [
+                    "Heladería Volta",
+                    -34.5883864,
+                    -58.3901635
+                ],
+                [
+                    "Freddo",
+                    -34.5885321,
+                    -58.3919056
+                ],
+                [
+                    "azaí",
+                    -34.5887892,
+                    -58.3916296
+                ],
+                [
+                    "Freddo",
+                    -34.5882327,
+                    -58.3900011
+                ],
+                [
+                    "Buller",
+                    -34.5888427,
+                    -58.3923576
+                ],
+                [
+                    "Mi Barrio Hamburguesería",
+                    -34.5889801,
+                    -58.391418
+                ],
+                [
+                    "Veggie Medio Oriente",
+                    -34.5885675,
+                    -58.391986
+                ],
+                [
+                    "Dean & Dennys",
+                    0,
+                    0
+                ],
+                [
+                    "Bartola",
+                    -34.5888041,
+                    -58.3923138
+                ]
+            ]
+        }
+    }
+}
