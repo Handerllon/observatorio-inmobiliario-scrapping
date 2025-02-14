@@ -2,12 +2,22 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+import re
 
-OHE_FILE = "tmp/ml_ready_ohe_2025-01-22.csv"
-FILE = "tmp/ml_ready_2025-01-22.csv"
+#TODO: add take last one .csv code
+HE_FILE = "tmp/ml_ready_ohe_13022025.csv"
+FILE = "tmp/ml_ready_13022025.csv"
 
-MODEL_FILE_OUT = "models/model_wo_ohe_2024-01-22.joblib"
-MODEL_FILE_OUT_OHE = "models/model_ohe_2024-01-22.joblib"
+# Usamos una expresión regular para capturar la secuencia de 8 dígitos antes de ".csv"
+match = re.search(r"_(\d{8})\.csv$", OHE_FILE)
+if match:
+    LATEST = match.group(1)
+else:
+    print("No se encontró una fecha en el nombre del archivo.")
+    
+
+MODEL_FILE_OUT = "models/model_wo_ohe_"+LATEST+".joblib"
+MODEL_FILE_OUT_OHE = "models/model_ohe_"+LATEST+".joblib"
 
 df_wo_ohe = pd.read_csv(FILE)
 df_ohe = pd.read_csv(OHE_FILE)
