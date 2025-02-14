@@ -3,6 +3,8 @@
 .env
 *.html
 *.zip
+*.png
+*.xlsx
 
 # Model files
 *.joblib
