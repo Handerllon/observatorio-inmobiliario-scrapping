@@ -1,4 +1,5 @@
 # Custom
+.aws-sam/
 samconfig.toml
 *.csv
 .env
