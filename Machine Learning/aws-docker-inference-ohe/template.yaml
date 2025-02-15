@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  scikit-learn-inferenceohe-docker-lambda
+
+  SAM Template for scikit-learn-inferenceohe-docker-lambda
+
+Resources:
+  inferenceohe:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      PackageType: Image
+      Architectures:
+        - x86_64
+      MemorySize: 256
+      Timeout: 60
+    Metadata:
+      DockerTag: python3.13
+      DockerContext: .
+      Dockerfile: Dockerfile
+
+Outputs:
+  inferenceohe:
+    Description: "UADE scikit learn inferenceohe"
+    Value: !GetAtt inferenceohe.Arn
+  inferenceoheIamRole:
+    Description: "Implicit IAM Role created for ScikitLearninferenceohe function"
+    Value: !GetAtt inferenceohe.Arn
