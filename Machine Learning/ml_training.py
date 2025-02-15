@@ -4,8 +4,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import re
 
-#TODO: add take last one .csv code
-HE_FILE = "tmp/ml_ready_ohe_13022025.csv"
+#TODO: add take last one .csv codemod   
+OHE_FILE = "tmp/ml_ready_ohe_13022025.csv"
 FILE = "tmp/ml_ready_13022025.csv"
 
 # Usamos una expresión regular para capturar la secuencia de 8 dígitos antes de ".csv"

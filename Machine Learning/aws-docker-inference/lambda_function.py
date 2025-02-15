@@ -4,6 +4,7 @@ import joblib
 import numpy as np
 import os
 import sklearn
+import pandas as pd
 print(sklearn.__version__)
 
 """
@@ -12,27 +13,72 @@ print(sklearn.__version__)
         input_data["total_area"]
         input_data["rooms"],
         input_data["bedrooms"],
-        input_data["bathrooms"],
-        input_data["garages"],
+        # input_data["bathrooms"],
+        # input_data["garages"],
         input_data["antiquity"], 
+
+IMPORTANTE:       
+        Recordar configurar BUCKET_NAME como variable de entorno de la lambda
+        y attachar la policy para que la lambda pueda acceder al bucket
+
+        aws iam create-policy --policy-name LambdaS3ModelsAccessPolicy --policy-document file://s3-lambda-models-policy.json
+
+        Get Your Lambda Role Name:
+        aws lambda get-function --function-name [NOMBRELAMBDA] --query 'Configuration.Role' --output text
+
+        Attach the New Policy to Your Lambda Role:
+        aws iam attach-role-policy --role-name [LAMBDA-ROLE] --policy-arn [POLICY-ARN]
+
 """
+
+#localhost
+# load_dotenv()
+# session = boto3.Session(
+#     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+#     aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY_ID')
+# )
+
+# Obtenemos los últimos archivos de cada una de las fuentes
+def extract_date(file):
+    date_part = file.split('_')[-1].replace('.joblib', '')  # Get "04022025"
+    return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
+
+s3_client = boto3.client("s3")
+BUCKET_NAME = os.getenv('BUCKET_NAME')
+#BUCKET_NAME = "your-bucket-name"
+# MODEL_KEY = "models/model_wo_ohe_13022025.joblib"  # Change as per your S3 structure
+LOCAL_MODEL_PATH = "/tmp/last_model.joblib"  # Temporary local storage
+
+files = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
+sub_files = list()
+for file in files["Contents"]:
+    if ("models" in file["Key"]) and (".joblib" in file["Key"]) and ("_wo_" in file["Key"]):
+        sub_files.append(file["Key"])
+
+sorted_files = sorted(sub_files, key=extract_date, reverse=True)
+MODEL_KEY = sorted_files[:1][0]
+
+# Download the model from S3
+print(f"Downloading from s3://{BUCKET_NAME}/{MODEL_KEY}")
+s3_client.download_file(BUCKET_NAME, MODEL_KEY, LOCAL_MODEL_PATH)
 
 def load_model_from_local(model_file):
     try:
-        model_path = os.path.join(os.environ['LAMBDA_TASK_ROOT'], model_file)
-        return joblib.load(model_path)
+        print(f"Loading {LOCAL_MODEL_PATH} model")
+        return joblib.load(LOCAL_MODEL_PATH)
     except Exception as e:
         raise Exception(f"Error loading model: {str(e)}")
     
-# Load the model on Lambda cold start (once per instance lifecycle)
-# Models wo (without one-hot-encoding)
-# MODEL_FILE = "model_wo_ohe_2024-12-04.joblib" # 4 features
-MODEL_FILE = "model_wo_ohe_2024-12-01.joblib"  # 6 features
-
-MODEL = load_model_from_local(MODEL_FILE)
+MODEL = load_model_from_local(LOCAL_MODEL_PATH)
 
 def validate_input(input_data):
-    required_fields = ["antiquity", "bedrooms", "garages", "bathrooms", "rooms", "total_area"]
+    required_fields = [
+            "antiquity",
+            "bedrooms",
+            # "garages",
+            # "bathrooms",
+            "rooms",
+            "total_area"]
     for field in required_fields:
         if field not in input_data:
             raise ValueError(f"Missing required field: {field}")
@@ -45,8 +91,8 @@ def predict(input_data):
         input_data["total_area"],
         input_data["rooms"],
         input_data["bedrooms"],
-        input_data["bathrooms"],
-        input_data["garages"],
+        # input_data["bathrooms"],
+        # input_data["garages"],
         input_data["antiquity"]
     ]).reshape(1, -1)
     prediction = MODEL.predict(input_features)
