@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  scikit-learn-train-docker-lambda
+
+  SAM Template for scikit-learn-train-docker-lambda
+
+Resources:
+  train:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      PackageType: Image
+      Architectures:
+        - x86_64
+      MemorySize: 256
+      Timeout: 60
+    Metadata:
+      DockerTag: python3.13
+      DockerContext: .
+      Dockerfile: Dockerfile
+Outputs:
+  train:
+    Description: "UADE scikit learn train"
+    Value: !GetAtt train.Arn
+  trainIamRole:
+    Description: "Implicit IAM Role created for ScikitLearntrain function"
+    Value: !GetAtt train.Arn
