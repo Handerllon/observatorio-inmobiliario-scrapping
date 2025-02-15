@@ -20,17 +20,17 @@ warnings.simplefilter(action='ignore', category=Warning)
 HISTORIC_FILE_PATH = "Files/alquilerescaba_202501.xlsx"
 
 INPUT_DATA = {
-  "total_area": 40,
-  "rooms": 2,
+  "total_area": "20-30",
+  "rooms": 1,
   "bedrooms": 1,
-  "bathrooms": 1,
-  "garages": 1,
-  "antiquity": 50,
-  "neighborhood": "RECOLETA",
-  "street": "Posadas 1725",
+  "antiquity": 20,
+  "neighborhood": "CABALLITO",
+  "street": "Hidalgo 354",
 }
 
 OUTPUT_DATA_JSON = {
+    "rent_result_min": None,
+    "rent_result_max": None,
     "total_properties": None,
     "total_properties_neighborhood": None,
     "average_price_neighborhood": None,
@@ -309,7 +309,6 @@ def upload_image_to_s3(bucket_name, key, plt):
         ContentType="image/png"
     )
     print(f"Uploaded image to s3://{BUCKET_NAME}/{key}")
-
 
 # Sección Info estadística
 def calculate_new_and_removed_properties_neighborhood(df_old, df_new, neighborhood=None):
@@ -595,6 +594,28 @@ def procesar_resultados(lugares_cercanos):
 
     return output_data
 
+# Rent Result
+def get_rent_result(m2, room, bedroom, antiquity, neighborhood, lambda_client, function_name):
+    payload = {
+        "total_area": m2,
+        "rooms": room,
+        "bedrooms": bedroom,
+        "antiquity": antiquity,
+        "neighborhood": neighborhood,
+        "bathrooms": 0,
+        "garages": 0,
+    }
+
+    response = lambda_client.invoke(
+        FunctionName=function_name,
+        InvocationType="RequestResponse",
+        Payload=json.dumps(payload)
+    )
+
+    response_json = json.loads(response["Payload"].read())
+    body_json = json.loads(response_json["body"])
+    return body_json["prediction"][0]
+
 print("Obteniendo información de S3...")
 load_dotenv()
 session = boto3.Session(
@@ -655,6 +676,15 @@ print("Obteniendo información de lugares cercanos...")
 lugares_cercanos = obtener_lugares_cercanos("{} ,{} ,CABA , Argentina".format(INPUT_DATA["street"], INPUT_DATA["neighborhood"]))
 results = procesar_resultados(lugares_cercanos)
 OUTPUT_DATA_JSON["nearby_places_data"] = results
+
+print("Obteniendo información de precio de alquiler...")
+min_m2, max_m2 = INPUT_DATA["total_area"].split("-")
+min_m2 = int(min_m2)
+max_m2 = int(max_m2)
+lambda_client = session.client('lambda')
+
+OUTPUT_DATA_JSON["rent_result_min"] = get_rent_result(min_m2, INPUT_DATA["rooms"], INPUT_DATA["bedrooms"], INPUT_DATA["antiquity"], INPUT_DATA["neighborhood"], lambda_client, os.getenv('INFERENCE_FUNCTION'))
+OUTPUT_DATA_JSON["rent_result_max"] = get_rent_result(max_m2, INPUT_DATA["rooms"], INPUT_DATA["bedrooms"], INPUT_DATA["antiquity"], INPUT_DATA["neighborhood"], lambda_client, os.getenv('INFERENCE_FUNCTION'))
 
 folder_name = f"reporting/reports/{uuid.uuid4()}/"
 input_json_key = folder_name + "input_data.json"
