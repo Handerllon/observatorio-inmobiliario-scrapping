@@ -1,103 +1,110 @@
 import json
 import boto3
-import joblib
+#import sklearn
+#print(sklearn.__version__)
 import numpy as np
 import os
-import sklearn
-print(sklearn.__version__)
+
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import train_test_split
+import pickle
+import joblib
+import os
+import pandas as pd #fail
+
+import re
 
 """
-    Referencia: etl/utils.py
+IMPORTANTE:       
+        Recordar configurar BUCKET_NAME como variable de entorno de la lambda
+        y attachar la policy para que la lambda pueda acceder al bucket
 
-        input_data["total_area"]
-        input_data["rooms"],
-        input_data["bedrooms"],
-        input_data["bathrooms"],
-        input_data["garages"],
-        input_data["antiquity"], 
+        aws iam create-policy --policy-name LambdaS3ModelsAccessPolicy --policy-document file://s3-lambda-models-policy.json
+
+        Get Your Lambda Role Name:
+        aws lambda get-function --function-name [NOMBRELAMBDA] --query 'Configuration.Role' --output text
+
+        Attach the New Policy to Your Lambda Role:
+        aws iam attach-role-policy --role-name [LAMBDA-ROLE] --policy-arn [POLICY-ARN]
+
 """
 
-def load_model_from_local(model_file):
-    try:
-        model_path = os.path.join(os.environ['LAMBDA_TASK_ROOT'], model_file)
-        return joblib.load(model_path)
-    except Exception as e:
-        raise Exception(f"Error loading model: {str(e)}")
-    
-# Load the model on Lambda cold start (once per instance lifecycle)
-# Models wo (without one-hot-encoding)
-# MODEL_FILE = "model_wo_ohe_2024-12-04.joblib" # 4 features
-MODEL_FILE = "model_wo_ohe_2024-12-01.joblib"  # 6 features
 
-MODEL = load_model_from_local(MODEL_FILE)
+#Obtenemos los últimos archivos de cada una de las fuentes
+def extract_date(file):
+    date_part = file.split('_')[-1].replace('.csv', '')  # Get "04022025"
+    return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
 
-def validate_input(input_data):
-    required_fields = ["antiquity", "bedrooms", "garages", "bathrooms", "rooms", "total_area"]
-    for field in required_fields:
-        if field not in input_data:
-            raise ValueError(f"Missing required field: {field}")
-        if not isinstance(input_data[field], int):
-            raise ValueError(f"Field '{field}' must be an integer.")
+s3_client = boto3.client("s3")
+BUCKET_NAME = os.getenv('BUCKET_NAME')
 
-def predict(input_data):
-    validate_input(input_data)
-    input_features = np.array([
-        input_data["total_area"],
-        input_data["rooms"],
-        input_data["bedrooms"],
-        input_data["bathrooms"],
-        input_data["garages"],
-        input_data["antiquity"]
-    ]).reshape(1, -1)
-    prediction = MODEL.predict(input_features)
-    print(f"Prediction: {prediction}")
-    return [str(prediction)] # Convert to list for JSON serialization
+files = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
+sub_files = list()
+for file in files["Contents"]:
+    if ("machine_learning/data/ml_ready_ohe" in file["Key"]) and (".csv" in file["Key"]):
+        sub_files.append(file["Key"])
+
+sorted_files = sorted(sub_files, key=extract_date, reverse=True)
+DATAFILE_KEY = sorted_files[:1][0]
+LOCAL_DATAFILE = "/tmp/data.csv"
+# Download the model from S3
+print(f"Downloading from s3://{BUCKET_NAME}/{DATAFILE_KEY}")
+s3_client.download_file(BUCKET_NAME, DATAFILE_KEY, LOCAL_DATAFILE)
+
+# Usamos una expresión regular para capturar la secuencia de 8 dígitos antes de ".csv"
+match = re.search(r"_(\d{8})\.csv$", DATAFILE_KEY)
+if match:
+    LATEST = match.group(1)
+else:
+    print("No se encontró una fecha en el nombre del archivo.")
+
+MODEL_FILE_OUT_OHE = "/tmp/model_ohe_"+LATEST+".joblib"
+# Define model output filename
+S3_MODEL_KEY = f"machine_learning/models/model_ohe_{LATEST}.joblib"
+
+def train_ohe():
+    df_ohe = pd.read_csv(LOCAL_DATAFILE)
+    y = df_ohe.price
+    X = df_ohe.drop(["price"], axis=1)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3)
+
+    # Con resultados del CVGridSearch grande
+    GBoost2 = GradientBoostingRegressor(n_estimators=1000, learning_rate=0.01,
+                                    max_depth=9, max_features='log2',
+                                    min_samples_leaf=2, min_samples_split=5,
+                                    loss='squared_error', random_state = 5, subsample=0.5)
+    GBoost_model2 = GBoost2.fit(X_train, y_train)
+
+    # Model evaluation
+    GBoost_pred2 = GBoost_model2.predict(X_test)
+    rmse_score = mean_squared_error(y_test, GBoost_pred2, squared=False)
+    model_score = GBoost_model2.score(X_test, y_test)
+
+    # print("RMSE score is: " + str(mean_squared_error(y_test, GBoost_pred2, squared=False))) # function'root_mean_squared_error
+    # print("Model score is: " + str(GBoost_model2.score(X_test, y_test)))
+
+
+    # Vamos a persistir el modelo que mejor nos dió
+    #dump(GBoost_model2, MODEL_FILE_OUT_OHE)
+
+    # Save model to local file
+    joblib.dump(GBoost_model2, MODEL_FILE_OUT_OHE)
+    print(f"Model saved locally: {MODEL_FILE_OUT_OHE}")
+
+    # Upload model to S3
+    s3_client.upload_file(MODEL_FILE_OUT_OHE, BUCKET_NAME, S3_MODEL_KEY)
+    print(f"Model uploaded to s3://{BUCKET_NAME}/{S3_MODEL_KEY}")
+
+    return {
+        "RMSE": rmse_score,
+        "ModelScore": model_score,
+        "S3ModelPath": f"s3://{BUCKET_NAME}/{S3_MODEL_KEY}"
+    }
 
 def lambda_handler(event, context):
-    print(f"Received event: {json.dumps(event)}")  # Log the entire event
-
-    # Assume POST if httpMethod is not present (for local testing)
-    http_method = event.get("httpMethod", "POST")
-    try:
-        if http_method == "POST":
-            # Handle body content
-            if "body" in event and event["body"]:
-                try:
-                    body = json.loads(event["body"])  # Parse the body
-                except json.JSONDecodeError:
-                    raise ValueError("Invalid JSON format in body.")
-            else:
-                body = event  # Assume the event itself is the payload when body is absent
-            print(f"Parsed body: {body}")  # Log the parsed body
-            prediction = predict(body)
-            return {
-                "statusCode": 200,
-                "body": json.dumps({"prediction": prediction}),
-                "headers": {
-                    "Content-Type": "application/json"
-                }
-            }
-        else:
-            return {
-                "statusCode": 405,
-                "body": json.dumps({"error": "Method not allowed. Use POST."}),
-                "headers": {
-                    "Content-Type": "application/json"
-                }
-            }
-    except ValueError as ve:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"error": str(ve)}),
-            "headers": {
-                "Content-Type": "application/json"
-            }
-        }
-    except Exception as e:
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": str(e)}),
-            "headers": {
-                "Content-Type": "application/json"
-            }
-        }
+    result = train_ohe()
+    return {
+        'statusCode': 200,
+        'body': json.dumps(result)
+    }
