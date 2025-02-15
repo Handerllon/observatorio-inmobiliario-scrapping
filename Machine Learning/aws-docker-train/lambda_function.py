@@ -61,7 +61,7 @@ else:
 
 MODEL_FILE_OUT_OHE = "/tmp/model_ohe_"+LATEST+".joblib"
 # Define model output filename
-S3_MODEL_KEY = f"machine_learning/models/model_ohe_{LATEST}.joblib"
+S3_MODEL_KEY = f"models/model_ohe_{LATEST}.joblib"
 
 def train_ohe():
     df_ohe = pd.read_csv(LOCAL_DATAFILE)
