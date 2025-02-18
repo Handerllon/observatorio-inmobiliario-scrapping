@@ -16,6 +16,8 @@ import uuid
 import warnings
 warnings.simplefilter(action='ignore', category=Warning)
 
+#Forces Matplotlib to store its cache in /tmp/, which is writable in AWS Lambda.
+os.environ["MPLCONFIGDIR"] = "/tmp"
 
 HISTORIC_FILE_PATH = "./alquilerescaba_202501.xlsx"
 

@@ -65,8 +65,12 @@ S3_MODEL_KEY = f"models/model_ohe_{LATEST}.joblib"
 
 def train_ohe():
     df_ohe = pd.read_csv(LOCAL_DATAFILE)
+    df_ohe.drop(columns=["bathrooms", "garages"], inplace=True)
+    
     y = df_ohe.price
     X = df_ohe.drop(["price"], axis=1)
+
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3)
 
     # Con resultados del CVGridSearch grande
