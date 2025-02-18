@@ -283,7 +283,7 @@ def upload_image_to_s3(bucket_name, key, plt):
         Body=img_buffer,
         ContentType="image/png"
     )
-    print(f"Uploaded image to s3://{BUCKET_NAME}/{key}")
+    return "https://{}.s3.us-east-2.amazonaws.com/{}".format(bucket_name, key)
 
 # Sección Info estadística
 def calculate_new_and_removed_properties_neighborhood(df_old, df_new, neighborhood=None):
@@ -304,7 +304,7 @@ def calculate_new_and_removed_properties_neighborhood(df_old, df_new, neighborho
 
     return new_properties, removed_properties
 
-def generate_price_evolution_graph(bucket_name, folder_name):
+def generate_price_evolution_graph(bucket_name, folder_name, input_data):
     #Aca utilizamos la data de San Andres
     df = pd.read_excel(HISTORIC_FILE_PATH)
     # Quitamos del dataframe los locales y oficinas
@@ -323,7 +323,7 @@ def generate_price_evolution_graph(bucket_name, folder_name):
 
     # Definir colores para cada zona
     colores = {
-        INPUT_DATA["neighborhood"]: "blue"
+        input_data["neighborhood"]: "blue"
     }
 
     # Crear la figura y el gráfico
@@ -340,7 +340,8 @@ def generate_price_evolution_graph(bucket_name, folder_name):
     plt.title("Evolución de Precios de Alquiler")
     plt.xticks(rotation=45)
 
-    upload_image_to_s3(bucket_name, folder_name + "price_by_m2_evolution.png", plt)
+    img_path = upload_image_to_s3(bucket_name, folder_name + "price_by_m2_evolution.png", plt)
+    return img_path
 
 def generate_bar_charts(df, bucket_name, folder_name):
     df_filtered = df
@@ -367,7 +368,7 @@ def generate_bar_charts(df, bucket_name, folder_name):
     plt.ylabel('Precio Promedio ($)')
     plt.xticks(rotation=0)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
-    upload_image_to_s3(bucket_name, folder_name + "bar_price_by_amb.png", plt)
+    img_path_1 = upload_image_to_s3(bucket_name, folder_name + "bar_price_by_amb.png", plt)
 
 
     # Gráfico de barras - Precio por metro cuadrado por cantidad de ambientes
@@ -381,7 +382,8 @@ def generate_bar_charts(df, bucket_name, folder_name):
     plt.ylabel('Precio por m² Promedio ($)')
     plt.xticks(rotation=0)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
-    upload_image_to_s3(bucket_name, folder_name + "bar_m2_price_by_amb.png", plt)
+    img_path_2 = upload_image_to_s3(bucket_name, folder_name + "bar_m2_price_by_amb.png", plt)
+    return img_path_1, img_path_2
 
 def generate_bar_charts_neighborhood(df, neighborhood, bucket_name, folder_name):
     df_filtered = df[df["normalized_neighborhood"] == neighborhood]
@@ -403,12 +405,12 @@ def generate_bar_charts_neighborhood(df, neighborhood, bucket_name, folder_name)
     # Agregar valores encima de cada barra
     for i, value in enumerate(avg_price):
         ax.text(i, value + (value * 0.02), f'{value:,.0f}', ha='center', fontsize=10, fontweight='bold')
-    plt.title(f'Promedio de Precio por Cantidad de Ambientes para {INPUT_DATA["neighborhood"]}')
+    plt.title(f'Promedio de Precio por Cantidad de Ambientes para {neighborhood}')
     plt.xlabel('Cantidad de Ambientes')
     plt.ylabel('Precio Promedio ($)')
     plt.xticks(rotation=0)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
-    upload_image_to_s3(bucket_name, folder_name + "bar_price_by_amb_neighborhood.png", plt)
+    img_path_1 = upload_image_to_s3(bucket_name, folder_name + "bar_price_by_amb_neighborhood.png", plt)
 
     # Gráfico de barras - Precio por metro cuadrado por cantidad de ambientes
     plt.figure(figsize=(10, 5))
@@ -416,12 +418,13 @@ def generate_bar_charts_neighborhood(df, neighborhood, bucket_name, folder_name)
     # Agregar valores encima de cada barra
     for i, value in enumerate(avg_price_per_m2):
         ax.text(i, value + (value * 0.02), f'{value:,.0f}', ha='center', fontsize=10, fontweight='bold')
-    plt.title('Precio por Metro Cuadrado por Cantidad de Ambientes para {}'.format(INPUT_DATA["neighborhood"]))
+    plt.title('Precio por Metro Cuadrado por Cantidad de Ambientes para {}'.format(neighborhood))
     plt.xlabel('Cantidad de Ambientes')
     plt.ylabel('Precio por m² Promedio ($)')
     plt.xticks(rotation=0)
     plt.grid(axis='y', linestyle='--', alpha=0.7)
-    upload_image_to_s3(bucket_name, folder_name + "bar_m2_price_by_amb_neighborhood.png", plt)
+    img_path_2 = upload_image_to_s3(bucket_name, folder_name + "bar_m2_price_by_amb_neighborhood.png", plt)
+    return img_path_1, img_path_2
 
 def generate_pie_charts(df, bucket_name, folder_name):
     df_filtered = df
@@ -447,7 +450,8 @@ def generate_pie_charts(df, bucket_name, folder_name):
         startangle=140
     )
     plt.title(f'Distribución de Propiedades por Cantidad de Ambientes CABA')
-    upload_image_to_s3(bucket_name, folder_name + "pie_property_amb_distribution.png", plt)
+    img_path = upload_image_to_s3(bucket_name, folder_name + "pie_property_amb_distribution.png", plt)
+    return img_path
 
 def generate_pie_charts_neighborhood(df, neighborhood, bucket_name, folder_name):
     df_filtered = df[df["normalized_neighborhood"] == neighborhood]
@@ -472,8 +476,9 @@ def generate_pie_charts_neighborhood(df, neighborhood, bucket_name, folder_name)
         colors=['skyblue', 'lightcoral', 'gold', 'lightgreen'], 
         startangle=140
     )
-    plt.title(f'Distribución de Propiedades por Cantidad de Ambientes {INPUT_DATA["neighborhood"]}')
-    upload_image_to_s3(bucket_name, folder_name + "pie_property_amb_distribution_neighborhood.png", plt)
+    plt.title(f'Distribución de Propiedades por Cantidad de Ambientes {neighborhood}')
+    img_path = upload_image_to_s3(bucket_name, folder_name + "pie_property_amb_distribution_neighborhood.png", plt)
+    return img_path
 
 # Sección lugares cercanos
 def obtener_coordenadas(direccion):
@@ -610,7 +615,15 @@ def main_execution(input_data):
         "new_properties_since_last_report": None,
         "removed_properties_since_last_report": None,
         "nearby_places_data": None,
+        "price_by_m2_evolution": None,
+        "bar_price_by_amb": None,
+        "bar_m2_price_by_amb": None,
+        "bar_price_by_amb_neighborhood": None,
+        "bar_m2_price_by_amb_neighborhood": None,
+        "pie_property_amb_distribution": None,
+        "bar_price_by_amb_neighborhood": None,
     }
+
     print("Obteniendo información de S3...")
     load_dotenv()
     s3_client = boto3.client('s3')
@@ -653,13 +666,13 @@ def main_execution(input_data):
     print("Obteniendo información estadística numérica...")
     OUTPUT_DATA_JSON["total_properties"] = len(df_new)
     OUTPUT_DATA_JSON["total_properties_neighborhood"] = len(df_new[df_new["normalized_neighborhood"] == input_data["neighborhood"]])
-    OUTPUT_DATA_JSON["average_price_neighborhood"] = df_new[df_new["normalized_neighborhood"] == input_data["neighborhood"]]["price"].mean()
-    OUTPUT_DATA_JSON["min_price_neighborhood"] = df_new[df_new["normalized_neighborhood"] == input_data["neighborhood"]]["price"].min()
-    OUTPUT_DATA_JSON["max_price_neighborhood"] = df_new[df_new["normalized_neighborhood"] == input_data["neighborhood"]]["price"].max()
+    OUTPUT_DATA_JSON["average_price_neighborhood"] = str(df_new[df_new["normalized_neighborhood"] == input_data["neighborhood"]]["price"].mean().astype(int))
+    OUTPUT_DATA_JSON["min_price_neighborhood"] = str(df_new[df_new["normalized_neighborhood"] == input_data["neighborhood"]]["price"].min().astype(int))
+    OUTPUT_DATA_JSON["max_price_neighborhood"] = str(df_new[df_new["normalized_neighborhood"] == input_data["neighborhood"]]["price"].max().astype(int))
     OUTPUT_DATA_JSON["total_properties_amb_neighborhood"] = len(df_new[(df_new["normalized_neighborhood"] == input_data["neighborhood"]) & (df_new["rooms"] == input_data["rooms"])])
-    OUTPUT_DATA_JSON["average_price_amb_neighborhood"] = df_new[(df_new["normalized_neighborhood"] == input_data["neighborhood"]) & (df_new["rooms"] == input_data["rooms"])]["price"].mean()
-    OUTPUT_DATA_JSON["min_price_amb_neighborhood"] = df_new[(df_new["normalized_neighborhood"] == input_data["neighborhood"]) & (df_new["rooms"] == input_data["rooms"])]["price"].min()
-    OUTPUT_DATA_JSON["max_price_amb_neighborhood"] = df_new[(df_new["normalized_neighborhood"] == input_data["neighborhood"]) & (df_new["rooms"] == input_data["rooms"])]["price"].max()
+    OUTPUT_DATA_JSON["average_price_amb_neighborhood"] = str(df_new[(df_new["normalized_neighborhood"] == input_data["neighborhood"]) & (df_new["rooms"] == input_data["rooms"])]["price"].mean().astype(int))
+    OUTPUT_DATA_JSON["min_price_amb_neighborhood"] = str(df_new[(df_new["normalized_neighborhood"] == input_data["neighborhood"]) & (df_new["rooms"] == input_data["rooms"])]["price"].min().astype(int))
+    OUTPUT_DATA_JSON["max_price_amb_neighborhood"] = str(df_new[(df_new["normalized_neighborhood"] == input_data["neighborhood"]) & (df_new["rooms"] == input_data["rooms"])]["price"].max().astype(int))
     OUTPUT_DATA_JSON["new_properties_since_last_report_neighborhood"], OUTPUT_DATA_JSON["removed_properties_since_last_report_neighborhood"] = calculate_new_and_removed_properties_neighborhood(df_old, df_new, input_data["neighborhood"])
     OUTPUT_DATA_JSON["new_properties_since_last_report"], OUTPUT_DATA_JSON["removed_properties_since_last_report"] = calculate_new_and_removed_properties_neighborhood(df_old, df_new)
 
@@ -685,11 +698,21 @@ def main_execution(input_data):
     upload_json_to_s3(BUCKET_NAME, output_json_key, OUTPUT_DATA_JSON)
 
     print("Obteniendo información estadística gráfica...")
-    plt_price_evolution = generate_price_evolution_graph(BUCKET_NAME, folder_name)
-    plt_bar_chats = generate_bar_charts(df_new, BUCKET_NAME, folder_name)
-    plt_bar_charts_neighborhood = generate_bar_charts_neighborhood(df_new, input_data["neighborhood"], BUCKET_NAME, folder_name)
-    plt_pie_charts = generate_pie_charts(df_new, BUCKET_NAME, folder_name)
-    plt_pie_charts_neighborhood = generate_pie_charts_neighborhood(df_new, input_data["neighborhood"], BUCKET_NAME, folder_name)
+    price_by_m2_evolution = generate_price_evolution_graph(BUCKET_NAME, folder_name, input_data)
+    bar_price_by_amb, bar_m2_price_by_amb = generate_bar_charts(df_new, BUCKET_NAME, folder_name)
+    bar_price_by_amb_neighborhood, bar_m2_price_by_amb_neighborhood = generate_bar_charts_neighborhood(df_new, input_data["neighborhood"], BUCKET_NAME, folder_name)
+    pie_property_amb_distribution = generate_pie_charts(df_new, BUCKET_NAME, folder_name)
+    pie_property_amb_distribution_neighborhood = generate_pie_charts_neighborhood(df_new, input_data["neighborhood"], BUCKET_NAME, folder_name)
+
+    OUTPUT_DATA_JSON["price_by_m2_evolution"] = price_by_m2_evolution
+    OUTPUT_DATA_JSON["bar_price_by_amb"] = bar_price_by_amb
+    OUTPUT_DATA_JSON["bar_m2_price_by_amb"] = bar_m2_price_by_amb
+    OUTPUT_DATA_JSON["bar_price_by_amb_neighborhood"] = bar_price_by_amb_neighborhood
+    OUTPUT_DATA_JSON["bar_m2_price_by_amb_neighborhood"] = bar_m2_price_by_amb_neighborhood
+    OUTPUT_DATA_JSON["pie_property_amb_distribution"] = pie_property_amb_distribution
+    OUTPUT_DATA_JSON["pie_property_amb_distribution_neighborhood"] = pie_property_amb_distribution_neighborhood
+
+    return OUTPUT_DATA_JSON
 
 def lambda_handler(event, context):
     print(f"Received event: {json.dumps(event)}")  # Log the entire event
@@ -707,10 +730,10 @@ def lambda_handler(event, context):
             else:
                 body = event  # Assume the event itself is the payload when body is absent
             print(f"Parsed body: {body}")  # Log the parsed body
-            prediction = main_execution(body)
+            result = main_execution(body)
             return {
                 "statusCode": 200,
-                "body": json.dumps({"prediction": prediction}),
+                "body": json.dumps({"result": result}),
                 "headers": {
                     "Content-Type": "application/json"
                 }

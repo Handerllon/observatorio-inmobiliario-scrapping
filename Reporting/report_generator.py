@@ -20,12 +20,14 @@ warnings.simplefilter(action='ignore', category=Warning)
 HISTORIC_FILE_PATH = "Files/alquilerescaba_202501.xlsx"
 
 INPUT_DATA = {
-  "total_area": "20-30",
+  "total_area": "30-35",
   "rooms": 1,
   "bedrooms": 1,
-  "antiquity": 20,
+  "bathroom": 1,
+  "garages": 0,
+  "antiquity": 10,
   "neighborhood": "CABALLITO",
-  "street": "Hidalgo 354",
+  "street": "Felipe Vallese 721",
 }
 
 OUTPUT_DATA_JSON = {
@@ -614,6 +616,7 @@ def get_rent_result(m2, room, bedroom, antiquity, neighborhood, lambda_client, f
 
     response_json = json.loads(response["Payload"].read())
     body_json = json.loads(response_json["body"])
+    print(body_json)
     return body_json["prediction"][0]
 
 print("Obteniendo información de S3...")
