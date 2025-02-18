@@ -127,12 +127,13 @@ def predict(input_data):
     dt_ohe = pd.DataFrame([dt_ohe_data])
 
     print(f"Input array: {dt_ohe.iloc[0].to_dict()}")
+    print(f"Using {MODEL_KEY} model")
 
     input_features = np.array([
         dt_ohe
     ]).reshape(1, -1)
     prediction = MODEL.predict(input_features)
-    print(f"Prediction: {prediction}")
+    print(f"Prediction (ohe): {prediction}")
     return [str(prediction)] # Convert to list for JSON serialization
 
 def lambda_handler(event, context):

@@ -21,6 +21,19 @@ os.environ["MPLCONFIGDIR"] = "/tmp"
 
 HISTORIC_FILE_PATH = "./alquilerescaba_202501.xlsx"
 
+INPUT_DATA = {
+  "total_area": "",
+  "rooms": -1,
+  "bedrooms": -1,
+  "antiquity": -1,
+  "neighborhood": "",
+  "street": "",
+}
+
+# load_dotenv() #localhost
+s3_client = boto3.client('s3')
+BUCKET_NAME = os.getenv('BUCKET_NAME')
+
 # Sección Utils
 def clean_data(df):
     df_to_clean = df.copy(deep=True)
@@ -476,18 +489,20 @@ def generate_pie_charts_neighborhood(df, neighborhood, bucket_name, folder_name)
     upload_image_to_s3(bucket_name, folder_name + "pie_property_amb_distribution_neighborhood.png", plt)
 
 # Sección lugares cercanos
-def obtener_coordenadas(direccion):
+def obtener_coordenadas(direccion, timeout=60):
     """ Convierte una dirección en coordenadas (latitud, longitud) usando Nominatim """
-    geolocator = Nominatim(user_agent="geoapi")
-    location = geolocator.geocode(direccion)
+    geolocator = Nominatim(user_agent="geoapi", timeout=timeout)
+    location = geolocator.geocode(direccion, timeout=timeout)
+
     if location:
         return location.latitude, location.longitude
     return None
 
-def consultar_overpass(lat, lon):
+def consultar_overpass(lat, lon, timeout=60):
     """ Consulta la API de Overpass para obtener lugares cercanos """
-    overpass_url = "http://overpass-api.de/api/interpreter"
-    
+    # overpass_url = "http://overpass-api.de/api/interpreter"
+    overpass_url = "https://overpass.kumi.systems/api/interpreter"
+
     # Radio de búsqueda (500 metros)
     radio = 500  
 
@@ -502,7 +517,7 @@ def consultar_overpass(lat, lon):
     out center;
     """
     
-    response = requests.get(overpass_url, params={'data': query})
+    response = requests.get(overpass_url, params={'data': query}, timeout=timeout)
     if response.status_code == 200:
         return response.json()["elements"]
     return []
@@ -591,6 +606,12 @@ def get_rent_result(m2, room, bedroom, antiquity, neighborhood, lambda_client, f
     body_json = json.loads(response_json["body"])
     return body_json["prediction"][0]
 
+def download_and_read_csv(s3_client, bucket_name, file_key, local_file_path):
+    # Download the file from S3
+    s3_client.download_file(bucket_name, file_key, local_file_path)
+    # Read the CSV file into a DataFrame
+    return pd.read_csv(local_file_path)
+
 def main_execution(input_data):
 
     OUTPUT_DATA_JSON = {
@@ -611,17 +632,17 @@ def main_execution(input_data):
         "removed_properties_since_last_report": None,
         "nearby_places_data": None,
     }
-    print("Obteniendo información de S3...")
-    load_dotenv()
-    s3_client = boto3.client('s3')
-    BUCKET_NAME = os.getenv('BUCKET_NAME')
 
+    print("Obteniendo información de S3...")
+
+    print(f"Bucket: {BUCKET_NAME}")
     # Agarramos de zonaprop los dos archivos mas nuevos
     files = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
     sub_files = list()
     for file in files["Contents"]:
         if ("/ZonaProp/STG" in file["Key"]) and (".csv" in file["Key"]):
             sub_files.append(file["Key"])
+            print(file["Key"])
 
     sorted_files = sorted(sub_files, key=extract_date, reverse=True)
     newest_files = sorted_files[:2]
@@ -629,13 +650,21 @@ def main_execution(input_data):
     newest_file = newest_files[0]
     previous_file = newest_files[1]
 
-    response = s3_client.get_object(Bucket=BUCKET_NAME, Key=newest_file)
-    csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
-    df_new = pd.read_csv(StringIO(csv_data))
+    # response = s3_client.get_object(Bucket=BUCKET_NAME, Key=newest_file)
+    # csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
+    # df_new = pd.read_csv(StringIO(csv_data))
 
-    response = s3_client.get_object(Bucket=BUCKET_NAME, Key=previous_file)
-    csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
-    df_old = pd.read_csv(StringIO(csv_data))
+    # response = s3_client.get_object(Bucket=BUCKET_NAME, Key=previous_file)
+    # csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
+    # df_old = pd.read_csv(StringIO(csv_data))
+    newest_file_local = '/tmp/newest_file.csv'
+    previous_file_local = '/tmp/previous_file.csv'
+
+    # Download and read the newest file
+    df_new = download_and_read_csv(s3_client, BUCKET_NAME, newest_file, newest_file_local)
+
+    # Download and read the previous file
+    df_old = download_and_read_csv(s3_client, BUCKET_NAME, previous_file, previous_file_local)
 
     print("Limpiando información...")
     df_old = clean_data(df_old)
@@ -690,6 +719,9 @@ def main_execution(input_data):
     plt_bar_charts_neighborhood = generate_bar_charts_neighborhood(df_new, input_data["neighborhood"], BUCKET_NAME, folder_name)
     plt_pie_charts = generate_pie_charts(df_new, BUCKET_NAME, folder_name)
     plt_pie_charts_neighborhood = generate_pie_charts_neighborhood(df_new, input_data["neighborhood"], BUCKET_NAME, folder_name)
+    print("End of report")
+    return f"{OUTPUT_DATA_JSON["rent_result_min"]}:{OUTPUT_DATA_JSON["rent_result_max"]}"
+
 
 def lambda_handler(event, context):
     print(f"Received event: {json.dumps(event)}")  # Log the entire event
