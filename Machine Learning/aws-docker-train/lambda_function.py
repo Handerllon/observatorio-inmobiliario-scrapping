@@ -30,6 +30,7 @@ IMPORTANTE:
 
 """
 
+#WARNING: por ahora esta construyendo solo el modelo con variable categórica (ohe)
 
 #Obtenemos los últimos archivos de cada una de las fuentes
 def extract_date(file):
@@ -48,6 +49,8 @@ for file in files["Contents"]:
 sorted_files = sorted(sub_files, key=extract_date, reverse=True)
 DATAFILE_KEY = sorted_files[:1][0]
 LOCAL_DATAFILE = "/tmp/data.csv"
+
+#TODO: evaluar  response = s3_client.get_object(Bucket=BUCKET_NAME, Key=)
 # Download the model from S3
 print(f"Downloading from s3://{BUCKET_NAME}/{DATAFILE_KEY}")
 s3_client.download_file(BUCKET_NAME, DATAFILE_KEY, LOCAL_DATAFILE)
@@ -87,7 +90,6 @@ def train_ohe():
 
     # print("RMSE score is: " + str(mean_squared_error(y_test, GBoost_pred2, squared=False))) # function'root_mean_squared_error
     # print("Model score is: " + str(GBoost_model2.score(X_test, y_test)))
-
 
     # Vamos a persistir el modelo que mejor nos dió
     #dump(GBoost_model2, MODEL_FILE_OUT_OHE)
