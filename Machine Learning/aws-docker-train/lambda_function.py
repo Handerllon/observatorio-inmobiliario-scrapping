@@ -132,7 +132,8 @@ def train_models_per_neighborhood():
 
     results = {}
     for neighborhood in NEIGHBORHOODS:
-        df_subset = df[df[neighborhood] == 1]
+        #df_subset = df[df[neighborhood] == 1]
+        df_subset = df[df[neighborhood] == 1].drop(columns=NEIGHBORHOODS)
         
         if df_subset.empty:
             print(f"No hay datos para {neighborhood}, omitiendo entrenamiento.")
@@ -140,6 +141,7 @@ def train_models_per_neighborhood():
 
         y = df_subset.price
         X = df_subset.drop(["price"], axis=1)
+        # print(X.columns)
 
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3)
         

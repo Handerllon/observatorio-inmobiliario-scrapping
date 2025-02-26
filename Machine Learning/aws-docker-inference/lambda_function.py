@@ -3,9 +3,8 @@ import boto3
 import joblib
 import numpy as np
 import os
-import sklearn
 import pandas as pd
-print(sklearn.__version__)
+
 
 """
     Referencia: etl/utils.py
