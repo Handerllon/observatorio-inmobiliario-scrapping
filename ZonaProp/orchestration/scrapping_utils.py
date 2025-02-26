@@ -16,7 +16,7 @@ USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTM
 
 def gen_driver():
     try:
-        driver = Driver(uc=True, browser="chrome", agent=USER_AGENT, headless=True, undetectable=True, incognito=True)
+        driver = Driver(uc=True, browser="chrome", agent=USER_AGENT, headless=False, undetectable=True, incognito=True)
         return driver
     except Exception as e:
         log("ERROR", f"Error in generating driver: {e}")
@@ -31,12 +31,13 @@ def bs4_parse_raw_html(raw_html):
 
     # Process each property card
     if postings_container:
-        property_cards = soup.select("div[class^=CardContainer]")
+        property_cards = soup.select("div[class^=postingCardLayout-module__posting-card-container]")
         for idx, card in enumerate(property_cards):
-            property_url = DOMAIN_URL + card.find('div', {'data-qa': 'posting PROPERTY'}).get('data-to-posting')
+            property_url = DOMAIN_URL + card.select_one("h3.postingCard-module__posting-description a").get('href')
             price = card.find('div', {'data-qa': 'POSTING_CARD_PRICE'}).text.strip() if card.find('div', {'data-qa': 'POSTING_CARD_PRICE'}) else None
             expenses = card.find('div', {'data-qa': 'expensas'}).text.strip() if card.find('div', {'data-qa': 'expensas'}) else None
-            address = card.select_one('div[class*="LocationAddress"]').text.strip() if card.select_one('div[class*="LocationAddress"]') else None
+            #address = card.select_one('div[class^=postingLocations-module__location-address postingLocations-module__location-address-in-listing]').text.strip() if card.select_one('div[class^=postingLocations-module__location-address postingLocations-module__location-address-in-listing]') else None
+            address = None
             location = card.find('h2', {'data-qa': 'POSTING_CARD_LOCATION'}).text.strip() if card.find('h2', {'data-qa': 'POSTING_CARD_LOCATION'}) else None
             features = card.find('h3', {'data-qa': 'POSTING_CARD_FEATURES'}).text.strip() if card.find('h3', {'data-qa': 'POSTING_CARD_FEATURES'}) else None
             description = card.find('h3', {'data-qa': 'POSTING_CARD_DESCRIPTION'}).text.strip() if card.find('h3', {'data-qa': 'POSTING_CARD_DESCRIPTION'}) else None
