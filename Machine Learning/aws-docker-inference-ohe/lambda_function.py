@@ -47,7 +47,7 @@ LOCAL_MODEL_PATH = "/tmp/last_model.joblib"  # Temporary local storage
 files = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
 sub_files = list()
 for file in files["Contents"]:
-    if ("models" in file["Key"]) and (".joblib" in file["Key"]) and ("_wo_" not in file["Key"]):
+    if ("models" in file["Key"]) and (".joblib" in file["Key"]) and ("_wo_" not in file["Key"] and ("by-neighborhood" not in file["Key"]) ):
         sub_files.append(file["Key"])
 
 sorted_files = sorted(sub_files, key=extract_date, reverse=True)
