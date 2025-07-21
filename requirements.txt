@@ -71,5 +71,6 @@ wcwidth==0.2.13
 websocket-client==1.8.0
 websockets==14.1
 wsproto==1.2.0
+seleniumbase==4.40.6
 # pycaret
 # pycaret==3.3.2 # correr en otro entorno, conflicto con el resto de las versiones
