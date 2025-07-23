@@ -27,11 +27,12 @@ def bs4_parse_raw_html(raw_html):
     soup = BeautifulSoup(raw_html, 'html.parser')
 
     # We look for the container of the property cards
-    postings_container = soup.find('div', class_='postings-container')
+    postings_container = soup.find('div', class_='postingsList-module__postings-container')
 
     # Process each property card
     if postings_container:
         property_cards = soup.select("div[class^=postingCardLayout-module__posting-card-container]")
+
         for idx, card in enumerate(property_cards):
             property_url = DOMAIN_URL + card.select_one("h3.postingCard-module__posting-description a").get('href')
             price = card.find('div', {'data-qa': 'POSTING_CARD_PRICE'}).text.strip() if card.find('div', {'data-qa': 'POSTING_CARD_PRICE'}) else None
