@@ -24,7 +24,7 @@ STOCK_FILE = f"STOCK_ArgenProp_{date}.csv"
 RAW_FILE = f"RAW_ArgenProp_{date}.csv"
 STG_FILE = f"STG_ArgenProp_{date}.csv"
 
-PAGES_SCRAPPED = 500
+PAGES_SCRAPPED = 100
 
 OUT_DIR = "output"
 
