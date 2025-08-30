@@ -257,7 +257,7 @@ def gen_driver():
             uc=True, 
             browser="chrome", 
             agent=user_agent, 
-            headless=False, 
+            headless=True, 
             undetectable=True, 
             incognito=True
         )
