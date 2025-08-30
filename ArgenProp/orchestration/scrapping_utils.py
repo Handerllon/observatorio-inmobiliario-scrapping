@@ -73,39 +73,24 @@ def gen_driver():
         user_agent = get_random_user_agent()
         
         log("INFO", f"Creating driver with User Agent: {user_agent[:50]}...")
+            
+        # Fallback a undetected-chromedriver con configuración para EC2
+        chrome_options = uc.ChromeOptions()
+        chrome_options.add_argument('--headless=new')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--disable-features=VizDisplayCompositor,TranslateUI')
+        chrome_options.add_argument('--disable-background-timer-throttling')
+        chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+        chrome_options.add_argument('--disable-renderer-backgrounding')
+        chrome_options.add_argument('--memory-pressure-off')
+        chrome_options.add_argument(f'--user-agent={user_agent}')
         
-        # Intentar primero con SeleniumBase Driver
-        try:
-            driver = Driver(
-                uc=True, 
-                browser="chrome", 
-                agent=user_agent, 
-                headless=True, 
-                undetectable=True, 
-                incognito=True
-            )
-            log("INFO", "SeleniumBase Driver created successfully")
-        except Exception as selenium_error:
-            log("WARNING", f"SeleniumBase Driver failed: {selenium_error}")
-            log("INFO", "Falling back to undetected-chromedriver...")
-            
-            # Fallback a undetected-chromedriver con configuración para EC2
-            chrome_options = uc.ChromeOptions()
-            chrome_options.add_argument('--headless=new')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-web-security')
-            chrome_options.add_argument('--disable-features=VizDisplayCompositor,TranslateUI')
-            chrome_options.add_argument('--disable-background-timer-throttling')
-            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-            chrome_options.add_argument('--disable-renderer-backgrounding')
-            chrome_options.add_argument('--memory-pressure-off')
-            chrome_options.add_argument(f'--user-agent={user_agent}')
-            
-            driver = uc.Chrome(options=chrome_options)
-            log("INFO", "undetected-chromedriver created successfully as fallback")
+        driver = uc.Chrome(options=chrome_options)
+        log("INFO", "undetected-chromedriver created successfully as fallback")
         
         # Configurar timeouts para evitar problemas de conexión en EC2
         try:
