@@ -253,13 +253,32 @@ def gen_driver():
         
         log("INFO", f"Creating driver with User Agent: {user_agent[:50]}...")
         
+        # Configuración específica para EC2 (entornos sin interfaz gráfica)
+        chrome_options = uc.ChromeOptions()
+        chrome_options.add_argument('--headless=new')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--disable-extensions')
+        chrome_options.add_argument('--disable-web-security')
+        chrome_options.add_argument('--disable-features=VizDisplayCompositor')
+        chrome_options.add_argument('--disable-ipc-flooding-protection')
+        chrome_options.add_argument('--disable-background-timer-throttling')
+        chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+        chrome_options.add_argument('--disable-renderer-backgrounding')
+        chrome_options.add_argument('--disable-features=TranslateUI')
+        chrome_options.add_argument('--disable-ipc-flooding-protection')
+        chrome_options.add_argument('--memory-pressure-off')
+        chrome_options.add_argument('--max_old_space_size=4096')
+        
         driver = Driver(
             uc=True, 
             browser="chrome", 
             agent=user_agent, 
             headless=True, 
             undetectable=True, 
-            incognito=True
+            incognito=True,
+            options=chrome_options
         )
         
         # Aplicar viewport aleatorio
@@ -271,7 +290,12 @@ def gen_driver():
         # Aplicar técnicas avanzadas anti-detección
         advanced_anti_detection(driver)
         
-        log("INFO", "Driver created successfully with advanced anti-detection")
+        # Configurar timeouts para evitar problemas de conexión en EC2
+        driver.set_page_load_timeout(120)  # 120 segundos para cargar página
+        driver.implicitly_wait(20)         # 20 segundos para elementos
+        driver.set_script_timeout(60)      # 60 segundos para scripts
+        
+        log("INFO", "Driver created successfully with advanced anti-detection and EC2-optimized timeouts")
         return driver
     except Exception as e:
         log("ERROR", f"Error in generating driver: {e}")
