@@ -10,14 +10,45 @@ from selenium.webdriver.common.by import By
 import requests
 import time
 import json
+import re
 
 ### Custom Imports
 from utils import log
 from io import StringIO
 
 DOMAIN_URL = "https://www.argenprop.com.ar"
-BASE_URL = "https://www.argenprop.com/departamentos/alquiler/capital-federal"
-INITIAL_URL = f"{BASE_URL}.html"
+BASE_URL = "https://www.argenprop.com/departamentos/alquiler"
+
+# Lista de barrios de Capital Federal para iterar
+BARRIOS = [
+    "abasto",
+    "almagro", 
+    "barracas",
+    "br-norte",
+    "belgrano",
+    "boca",
+    "boedo",
+    "caballito",
+    "centro",
+    "chacarita",
+    "colegiales",
+    "congreso",
+    "constitucion",
+    "flores",
+    "floresta",
+    "liniers",
+    "mataderos",
+    "nuñez",
+    "once",
+    "palermo",
+    "parque-centenario",
+    "parque-chacabuco",
+    "parque-patricios",
+    "paternal",
+    "saavedra",
+    "san-cristobal",
+    "san-telmo"
+]
 
 # Lista de User Agents para rotar
 USER_AGENTS = [
@@ -43,14 +74,16 @@ VIEWPORTS = [
 ]
 
 # URLs de referencia para simular navegación orgánica
-REFERERS = [
-    "https://www.google.com.ar/search?q=departamentos+alquiler+capital+federal",
-    "https://www.google.com.ar/search?q=alquiler+departamento+buenos+aires",
-    "https://www.google.com.ar/search?q=argenprop+alquiler",
-    "https://www.google.com.ar/",
-    "https://www.bing.com/search?q=alquiler+departamento+caba",
-    ""  # Direct navigation
-]
+def get_referers_for_barrio(barrio):
+    return [
+        f"https://www.google.com.ar/search?q=departamentos+alquiler+{barrio}+capital+federal",
+        f"https://www.google.com.ar/search?q=alquiler+departamento+{barrio}+buenos+aires",
+        f"https://www.google.com.ar/search?q=argenprop+{barrio}+alquiler",
+        "https://www.google.com.ar/search?q=argenprop+alquiler",
+        "https://www.google.com.ar/",
+        "https://www.bing.com/search?q=alquiler+departamento+caba",
+        ""  # Direct navigation
+    ]
 
 def get_random_user_agent():
     return random.choice(USER_AGENTS)
@@ -58,8 +91,34 @@ def get_random_user_agent():
 def get_random_viewport():
     return random.choice(VIEWPORTS)
 
-def get_random_referer():
-    return random.choice(REFERERS)
+def get_random_referer(barrio=None):
+    if barrio:
+        referers = get_referers_for_barrio(barrio)
+    else:
+        referers = [
+            "https://www.google.com.ar/search?q=argenprop+alquiler",
+            "https://www.google.com.ar/",
+            "https://www.bing.com/search?q=alquiler+departamento+caba",
+            ""  # Direct navigation
+        ]
+    return random.choice(referers)
+
+def extract_property_ids(raw_html):
+    """Extraer IDs únicos de propiedades para detectar contenido duplicado"""
+    try:
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        property_cards = soup.select("div[class^=listing__item]")
+        property_ids = []
+        for card in property_cards:
+            try:
+                property_url = card.find('a', class_='card')['href']
+                property_id = property_url.split("-")[-1]
+                property_ids.append(property_id)
+            except:
+                continue
+        return set(property_ids)
+    except:
+        return set()
 
 def random_sleep(min_seconds=3, max_seconds=8):
     """Sleep for a random amount of time to simulate human behavior"""
@@ -167,10 +226,10 @@ def set_random_viewport(driver):
     except Exception as e:
         log("WARNING", f"Error setting viewport: {e}")
 
-def simulate_organic_navigation(driver, url):
-    """Simular navegación orgánica con referer"""
+def simulate_organic_navigation(driver, url, barrio=None):
+    """Simular navegación orgánica con referer específico del barrio"""
     try:
-        referer = get_random_referer()
+        referer = get_random_referer(barrio)
         if referer:
             # Primero ir al sitio referer
             try:
@@ -194,25 +253,66 @@ def gen_driver():
         
         log("INFO", f"Creating driver with User Agent: {user_agent[:50]}...")
         
-        driver = Driver(
-            uc=True, 
-            browser="chrome", 
-            agent=user_agent, 
-            headless=False, 
-            undetectable=True, 
-            incognito=True
-        )
+        # Intentar primero con SeleniumBase Driver
+        try:
+            driver = Driver(
+                uc=True, 
+                browser="chrome", 
+                agent=user_agent, 
+                headless=True, 
+                undetectable=True, 
+                incognito=True
+            )
+            log("INFO", "SeleniumBase Driver created successfully")
+        except Exception as selenium_error:
+            log("WARNING", f"SeleniumBase Driver failed: {selenium_error}")
+            log("INFO", "Falling back to undetected-chromedriver...")
+            
+            # Fallback a undetected-chromedriver con configuración para EC2
+            chrome_options = uc.ChromeOptions()
+            chrome_options.add_argument('--headless=new')
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--disable-features=VizDisplayCompositor,TranslateUI')
+            chrome_options.add_argument('--disable-background-timer-throttling')
+            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+            chrome_options.add_argument('--disable-renderer-backgrounding')
+            chrome_options.add_argument('--memory-pressure-off')
+            chrome_options.add_argument(f'--user-agent={user_agent}')
+            
+            driver = uc.Chrome(options=chrome_options)
+            log("INFO", "undetected-chromedriver created successfully as fallback")
         
-        # Aplicar viewport aleatorio
-        set_random_viewport(driver)
+        # Aplicar viewport aleatorio (solo si es SeleniumBase Driver)
+        try:
+            set_random_viewport(driver)
+        except:
+            log("WARNING", "Could not set random viewport (fallback driver)")
         
-        # Limpiar datos del navegador
-        clean_browser_data(driver)
+        # Limpiar datos del navegador (solo si es SeleniumBase Driver)
+        try:
+            clean_browser_data(driver)
+        except:
+            log("WARNING", "Could not clean browser data (fallback driver)")
         
-        # Aplicar técnicas avanzadas anti-detección
-        advanced_anti_detection(driver)
+        # Aplicar técnicas avanzadas anti-detección (solo si es SeleniumBase Driver)
+        try:
+            advanced_anti_detection(driver)
+        except:
+            log("WARNING", "Could not apply advanced anti-detection (fallback driver)")
         
-        log("INFO", "Driver created successfully with advanced anti-detection")
+        # Configurar timeouts para evitar problemas de conexión en EC2
+        try:
+            driver.set_page_load_timeout(120)  # 120 segundos para cargar página
+            driver.implicitly_wait(20)         # 20 segundos para elementos
+            driver.set_script_timeout(60)      # 60 segundos para scripts
+        except:
+            log("WARNING", "Could not set timeouts (fallback driver)")
+        
+        log("INFO", "Driver created successfully with EC2-optimized configuration")
         return driver
     except Exception as e:
         log("ERROR", f"Error in generating driver: {e}")
@@ -264,155 +364,111 @@ def start_scrapping(out_file, iterations, s3_client, bucket_name):
     consecutive_failures = 0
     max_consecutive_failures = 3
 
-    log("INFO", "Starting the scraping process for ArgenProp")
+    log("INFO", f"Starting the scraping process for ArgenProp - {len(BARRIOS)} barrios, {iterations} pages each")
 
-    # Iterar secuencialmente desde la primera página (comportamiento humano natural)
-    for page_number in range(1, iterations + 1):
-        if page_number == 1:
-            url = INITIAL_URL
-        else:
-            url = f"{BASE_URL}?pagina-{page_number}"
+    # Iterar por cada barrio, luego por páginas (distribución natural de requests)
+    for barrio_idx, barrio in enumerate(BARRIOS):
+        log("INFO", f"Starting scraping for barrio: {barrio.upper()} ({barrio_idx + 1}/{len(BARRIOS)})")
         
-        log("INFO", f"Scraping page {page_number} of {iterations} - URL: {url}")
-
-        try:
-            # Usar navegación orgánica con referer
-            simulate_organic_navigation(driver, url)
-            
-            # Esperar que la página cargue completamente
-            random_sleep(3, 6)
-            
-            # Simular comportamiento humano más realista
-            simulate_human_behavior(driver)
-            
-        except Exception as e:
-            log("WARNING", f"Error in loading URL: {e} - Skipping page {page_number}")
-            failed_pages.append(page_number)
-            consecutive_failures += 1
-            if consecutive_failures >= max_consecutive_failures:
-                log("ERROR", f"Too many consecutive failures ({consecutive_failures}). Taking longer break...")
-                random_sleep(60, 120)  # Aumentar tiempo de descanso
-                consecutive_failures = 0
-            continue
-
-        # Verificar si hay CAPTCHA y manejarlo automáticamente
-        captcha_attempts = 0
-        max_captcha_attempts = 5
+        # Variables para detectar contenido duplicado
+        previous_property_ids = set()
+        consecutive_duplicates = 0
         
-        while ("confirm you are human" in driver.page_source.lower()) and captcha_attempts < max_captcha_attempts:
-            captcha_attempts += 1
-            consecutive_failures += 1
-            
-            # Calcular tiempo de espera progresivo más agresivo (60s, 180s, 360s, 720s, 1200s)
-            wait_time = min(60 * (3 ** (captcha_attempts - 1)), 1200)  # Hasta 20 minutos max
-            log("WARNING", f"CAPTCHA detected (attempt {captcha_attempts}/{max_captcha_attempts}). Waiting {wait_time//60:.1f} minutes and regenerating driver with new identity...")
-            
-            # Cerrar driver actual completamente
-            try:
-                driver.quit()
-            except:
-                pass
-            
-            # Esperar tiempo progresivo más largo
-            random_sleep(wait_time, wait_time + 60)
-            
-            # Regenerar driver con identidad completamente nueva
-            driver = gen_driver()
-            if driver is None:
-                log("ERROR", "Failed to regenerate driver. Aborting scraping process.")
-                return
-            
-            # Simular navegación más humana después de CAPTCHA
-            try:
-                # Primero visitar página principal o de búsqueda
-                if random.random() < 0.5:
-                    driver.get("https://www.argenprop.com.ar")
-                    random_sleep(3, 6)
-                    simulate_human_behavior(driver)
-                
-                # Luego navegar a la URL objetivo
-                simulate_organic_navigation(driver, url)
-                random_sleep(4, 8)
-                simulate_human_behavior(driver)
-            except Exception as e:
-                log("WARNING", f"Error reloading page after CAPTCHA: {e}")
-                continue
+        # Tomar un descanso entre barrios para evitar detección
+        if barrio_idx > 0:
+            log("INFO", f"Taking break before switching to {barrio}...")
+            random_sleep(20, 40)
         
-        # Si después de todos los intentos sigue habiendo CAPTCHA, saltar esta página
-        if captcha_attempts >= max_captcha_attempts and ("confirm you are human" in driver.page_source.lower() or "captcha" in driver.page_source.lower()):
-            log("ERROR", f"CAPTCHA persists after {max_captcha_attempts} attempts. Skipping page {page_number}")
-            failed_pages.append(page_number)
-            consecutive_failures += 1
-            
-            # Si hay muchos fallos consecutivos, tomar un descanso muy largo
-            if consecutive_failures >= max_consecutive_failures:
-                log("WARNING", f"Too many consecutive CAPTCHA failures. Taking extended break (10-15 minutes)...")
-                random_sleep(600, 900)  # 10-15 minutos
-                consecutive_failures = 0
-            continue
-
-        # Resetear contador de fallos consecutivos si llegamos aquí
-        consecutive_failures = 0
-
-        # Espera aleatoria más larga entre páginas (aumentada para evitar detección)
-        random_sleep(12, 25)
-
-        # We delegate html analysis to BeautifulSoup
-        raw_html = driver.page_source
-
-        try:
-            extracted_values = bs4_parse_raw_html(raw_html)
-            log("INFO", f"Extracted {len(extracted_values)} property cards from page {page_number}")
-            if not extracted_values:
-                log("WARNING", f"No property cards found on page {page_number}")
-                failed_pages.append(page_number)
-            else:
-                out_values.extend(extracted_values)
-        except Exception as e:
-            log("WARNING", f"Error in extracting values: {e} - Skipping page {page_number}")
-            failed_pages.append(page_number)
-            continue
-
-        # Cada 20 páginas, tomar un descanso más largo
-        if page_number % 20 == 0:
-            log("INFO", f"Taking extended break after {page_number} pages...")
-            random_sleep(60, 120)
-
-    # Retry failed pages with longer delays
-    if failed_pages:
-        log("INFO", f"Retrying {len(failed_pages)} failed pages with longer delays...")
-        for page_number in failed_pages[:min(10, len(failed_pages))]:  # Retry max 10 failed pages
+        for page_number in range(1, iterations + 1):
             if page_number == 1:
-                url = INITIAL_URL
+                url = f"{BASE_URL}/{barrio}"
             else:
-                url = f"{BASE_URL}?pagina-{page_number}"
+                url = f"{BASE_URL}/{barrio}?pagina-{page_number}"
             
-            log("INFO", f"Retrying page {page_number} with enhanced stealth...")
-            random_sleep(20, 35)  # Longer delay for retries
-            
+            log("INFO", f"Scraping {barrio} - page {page_number}/{iterations} - URL: {url}")
+
             try:
-                # Aplicar limpieza completa antes del retry
-                clean_browser_data(driver)
-                advanced_anti_detection(driver)
+                # Usar navegación orgánica con referer específico del barrio
+                simulate_organic_navigation(driver, url, barrio)
                 
-                # Usar navegación orgánica
-                simulate_organic_navigation(driver, url)
-                random_sleep(5, 10)
+                # Esperar que la página cargue completamente
+                random_sleep(3, 6)
+                
+                # Simular comportamiento humano más realista
                 simulate_human_behavior(driver)
                 
-                raw_html = driver.page_source
-                
-                # Verificar si hay CAPTCHA en el retry
-                if "confirm you are human" in raw_html.lower() or "captcha" in raw_html.lower():
-                    log("WARNING", f"CAPTCHA detected on retry for page {page_number}. Skipping.")
-                    continue
-                
-                extracted_values = bs4_parse_raw_html(raw_html)
-                if extracted_values:
-                    out_values.extend(extracted_values)
-                    log("INFO", f"Successfully retried page {page_number}")
             except Exception as e:
-                log("WARNING", f"Retry failed for page {page_number}: {e}")
+                log("WARNING", f"Error in loading URL: {e} - Skipping {barrio} page {page_number}")
+                failed_pages.append(f"{barrio}-{page_number}")
+                consecutive_failures += 1
+                if consecutive_failures >= max_consecutive_failures:
+                    log("ERROR", f"Too many consecutive failures ({consecutive_failures}). Taking longer break...")
+                    random_sleep(60, 120)  # Aumentar tiempo de descanso
+                    consecutive_failures = 0
+                continue
+
+            # Resetear contador de fallos consecutivos si llegamos aquí
+            consecutive_failures = 0
+
+            # Espera aleatoria más larga entre páginas (aumentada para evitar detección)
+            random_sleep(1, 5)
+
+            # Verificar si llegamos al final de las páginas para este barrio
+            current_url = driver.current_url
+        
+            # Detectar redirección a una página anterior (indica fin de resultados)
+            if page_number > 1:
+                # Extraer número de página actual de la URL
+                current_page_match = re.search(r'pagina-(\d+)', current_url)
+                if current_page_match:
+                    current_page = int(current_page_match.group(1))
+                    if current_page < page_number:
+                        log("INFO", f"Reached end of results for {barrio} (redirected to page {current_page} when requesting {page_number}). Moving to next barrio.")
+                        break
+                elif 'pagina-' not in current_url and page_number > 1:
+                    # Si no hay 'pagina-' en la URL pero solicitamos página > 1, fuimos redirigidos a página 1
+                    log("INFO", f"Reached end of results for {barrio} (redirected to page 1 when requesting {page_number}). Moving to next barrio.")
+                    break
+
+            # We delegate html analysis to BeautifulSoup
+            raw_html = driver.page_source
+
+            # Detectar contenido duplicado comparando IDs de propiedades
+            current_property_ids = extract_property_ids(raw_html)
+            if page_number > 1 and current_property_ids and current_property_ids == previous_property_ids:
+                consecutive_duplicates += 1
+                log("INFO", f"Detected duplicate content on {barrio} page {page_number} (consecutive: {consecutive_duplicates})")
+                
+                # Si tenemos contenido duplicado consecutivo, probablemente llegamos al final
+                if consecutive_duplicates >= 2:
+                    log("INFO", f"Multiple consecutive duplicates detected for {barrio}. Moving to next barrio.")
+                    break
+            else:
+                consecutive_duplicates = 0
+                previous_property_ids = current_property_ids.copy()
+
+            try:
+                extracted_values = bs4_parse_raw_html(raw_html)
+                log("INFO", f"Extracted {len(extracted_values)} property cards from {barrio} page {page_number}")
+                if not extracted_values:
+                    log("WARNING", f"No property cards found on {barrio} page {page_number} - might have reached end of results")
+                    # Si no encontramos resultados y estamos en página > 1, probablemente llegamos al final
+                    if page_number > 1:
+                        log("INFO", f"No more results for {barrio}. Moving to next barrio.")
+                        break
+                    else:
+                        failed_pages.append(f"{barrio}-{page_number}")
+                else:
+                    out_values.extend(extracted_values)
+            except Exception as e:
+                log("WARNING", f"Error in extracting values: {e} - Skipping {barrio} page {page_number}")
+                failed_pages.append(f"{barrio}-{page_number}")
+                continue
+
+            # Cada 10 páginas dentro del mismo barrio, tomar un descanso
+            if page_number % 10 == 0:
+                log("INFO", f"Taking break after {page_number} pages in {barrio}...")
+                random_sleep(30, 60)
 
     log("INFO", "Scraping process completed! Generating STOCK file...")
     
@@ -432,4 +488,4 @@ def start_scrapping(out_file, iterations, s3_client, bucket_name):
         if driver:
             driver.quit()
     except Exception as e:
-        log("WARNING", f"Error closing driver: {e}") 
+        log("WARNING", f"Error closing driver: {e}")
