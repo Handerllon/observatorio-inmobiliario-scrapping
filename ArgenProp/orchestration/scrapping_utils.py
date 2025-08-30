@@ -239,7 +239,8 @@ def gen_driver():
             agent=user_agent, 
             headless=True, 
             undetectable=True, 
-            incognito=True
+            incognito=True,
+            page_load_strategy="eager"
         )
         
         # Aplicar viewport aleatorio
