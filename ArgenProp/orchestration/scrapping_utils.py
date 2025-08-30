@@ -226,26 +226,6 @@ def set_random_viewport(driver):
     except Exception as e:
         log("WARNING", f"Error setting viewport: {e}")
 
-def simulate_organic_navigation(driver, url, barrio=None):
-    """Simular navegación orgánica con referer específico del barrio"""
-    try:
-        referer = get_random_referer(barrio)
-        if referer:
-            # Primero ir al sitio referer
-            try:
-                driver.get(referer)
-                sleep(random.uniform(1, 3))
-            except:
-                pass
-        
-        # Ahora navegar a la URL objetivo
-        driver.get(url)
-        log("INFO", f"Navigated from referer: {referer or 'Direct'}")
-    except Exception as e:
-        log("WARNING", f"Error in organic navigation: {e}")
-        # Fallback a navegación directa
-        driver.get(url)
-
 def gen_driver():
     try:
         # Usar un User Agent aleatorio
@@ -253,67 +233,25 @@ def gen_driver():
         
         log("INFO", f"Creating driver with User Agent: {user_agent[:50]}...")
         
-        # Intentar primero con SeleniumBase Driver
-        try:
-            driver = Driver(
-                uc=True, 
-                browser="chrome", 
-                agent=user_agent, 
-                headless=True, 
-                undetectable=True, 
-                incognito=True
-            )
-            log("INFO", "SeleniumBase Driver created successfully")
-            driver.command_executor.set_timeout(2000)
-        except Exception as selenium_error:
-            log("WARNING", f"SeleniumBase Driver failed: {selenium_error}")
-            log("INFO", "Falling back to undetected-chromedriver...")
-            
-            # Fallback a undetected-chromedriver con configuración para EC2
-            chrome_options = uc.ChromeOptions()
-            chrome_options.add_argument('--headless=new')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-web-security')
-            chrome_options.add_argument('--disable-features=VizDisplayCompositor,TranslateUI')
-            chrome_options.add_argument('--disable-background-timer-throttling')
-            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-            chrome_options.add_argument('--disable-renderer-backgrounding')
-            chrome_options.add_argument('--memory-pressure-off')
-            chrome_options.add_argument(f'--user-agent={user_agent}')
-            
-            driver = uc.Chrome(options=chrome_options)
-            log("INFO", "undetected-chromedriver created successfully as fallback")
+        driver = Driver(
+            uc=True, 
+            browser="chrome", 
+            agent=user_agent, 
+            headless=True, 
+            undetectable=True, 
+            incognito=True
+        )
         
-        # Aplicar viewport aleatorio (solo si es SeleniumBase Driver)
-        try:
-            set_random_viewport(driver)
-        except:
-            log("WARNING", "Could not set random viewport (fallback driver)")
+        # Aplicar viewport aleatorio
+        set_random_viewport(driver)
         
-        # Limpiar datos del navegador (solo si es SeleniumBase Driver)
-        try:
-            clean_browser_data(driver)
-        except:
-            log("WARNING", "Could not clean browser data (fallback driver)")
+        # Limpiar datos del navegador
+        clean_browser_data(driver)
         
-        # Aplicar técnicas avanzadas anti-detección (solo si es SeleniumBase Driver)
-        try:
-            advanced_anti_detection(driver)
-        except:
-            log("WARNING", "Could not apply advanced anti-detection (fallback driver)")
+        # Aplicar técnicas avanzadas anti-detección
+        advanced_anti_detection(driver)
         
-        # Configurar timeouts para evitar problemas de conexión en EC2
-        try:
-            driver.set_page_load_timeout(120)  # 120 segundos para cargar página
-            driver.implicitly_wait(20)         # 20 segundos para elementos
-            driver.set_script_timeout(60)      # 60 segundos para scripts
-        except:
-            log("WARNING", "Could not set timeouts (fallback driver)")
-        
-        log("INFO", "Driver created successfully with EC2-optimized configuration")
+        log("INFO", "Driver created successfully with advanced anti-detection")
         return driver
     except Exception as e:
         log("ERROR", f"Error in generating driver: {e}")
@@ -390,7 +328,7 @@ def start_scrapping(out_file, iterations, s3_client, bucket_name):
 
             try:
                 # Usar navegación orgánica con referer específico del barrio
-                simulate_organic_navigation(driver, url, barrio)
+                driver.get(url)
                 
                 # Esperar que la página cargue completamente
                 random_sleep(3, 6)
