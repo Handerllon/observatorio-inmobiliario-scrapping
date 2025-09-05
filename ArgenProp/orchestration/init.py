@@ -36,8 +36,8 @@ else:
 
 # Inicializamos el proceso de scraping
 # Inicializamos el proceso de scraping
-start_scrapping("scrapping/ArgenProp/STOCK/" + STOCK_FILE, PAGES_SCRAPPED, s3_client, BUCKET_NAME)
-generate_raw_file("scrapping/ArgenProp/STOCK/" + STOCK_FILE, "scrapping/ArgenProp/RAW/" + RAW_FILE, s3_client, BUCKET_NAME)
-generate_stg_file("scrapping/ArgenProp/RAW/" + RAW_FILE, "scrapping/ArgenProp/STG/" + STG_FILE, s3_client, BUCKET_NAME)
+start_scrapping("data/argenprop/raw/" + RAW_FILE, PAGES_SCRAPPED, s3_client, BUCKET_NAME)
+#generate_raw_file("scrapping/ArgenProp/STOCK/" + STOCK_FILE, "scrapping/ArgenProp/RAW/" + RAW_FILE, s3_client, BUCKET_NAME)
+#generate_stg_file("scrapping/ArgenProp/RAW/" + RAW_FILE, "scrapping/ArgenProp/STG/" + STG_FILE, s3_client, BUCKET_NAME)
 
 
