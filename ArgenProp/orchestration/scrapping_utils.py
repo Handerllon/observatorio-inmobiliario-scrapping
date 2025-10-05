@@ -410,7 +410,7 @@ def start_scrapping(out_file, iterations, s3_client, bucket_name):
                 log("INFO", f"Taking break after {page_number} pages in {barrio}...")
                 random_sleep(30, 60)
 
-    log("INFO", "Scraping process completed! Generating STOCK file...")
+    log("INFO", "Scraping process completed! Generating RAW file...")
     
     if out_values:
         df = pd.DataFrame(out_values)
