@@ -315,6 +315,24 @@ def map_neighborhood(neighborhood):
     match = get_close_matches(neighborhood, valid_neighborhoods, n=1, cutoff=0.6)
     return match[0] if match else 'OTRO'
 
+def calculate_new_and_removed_properties_neighborhood(df_old, df_new, neighborhood=None):
+
+    if not neighborhood:
+        old_ids = df_old['zonaprop_code'].unique().tolist()
+        new_ids = df_new['zonaprop_code'].unique().tolist()
+
+        new_properties = len(df_new[~df_new['zonaprop_code'].isin(old_ids)])
+        removed_properties = len(df_old[~df_old['zonaprop_code'].isin(new_ids)])
+
+    else:
+        old_ids = df_old[df_old['normalized_neighborhood'] == neighborhood]['zonaprop_code'].unique().tolist()
+        new_ids = df_new[df_new['normalized_neighborhood'] == neighborhood]['zonaprop_code'].unique().tolist()
+
+        new_properties = len(df_new[(df_new['normalized_neighborhood'] == neighborhood) & (~df_new['zonaprop_code'].isin(old_ids))])
+        removed_properties = len(df_old[(df_old['normalized_neighborhood'] == neighborhood) & (~df_old['zonaprop_code'].isin(new_ids))])
+
+    return new_properties, removed_properties
+
 load_dotenv()
 session = boto3.Session(
     aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
@@ -370,22 +388,25 @@ for neighborhood in valid_neighborhoods:
 
     print(f"Generando metricas para el barrio {neighborhood}")
 
-    import sys
-
     JSON_DATA = {}
 
     JSON_DATA["total_properties"] = len(df_new)
+    JSON_DATA["new_properties_since_last_report"], JSON_DATA["removed_properties_since_last_report"] = calculate_new_and_removed_properties_neighborhood(df_old, df_new)
 
     if df_new[df_new["normalized_neighborhood"] == neighborhood].empty:
         JSON_DATA["total_properties_neighborhood"] = 0
         JSON_DATA["average_price_neighborhood"] = 0
         JSON_DATA["min_price_neighborhood"] = 0
         JSON_DATA["max_price_neighborhood"] = 0
+        JSON_DATA["new_properties_since_last_report_neighborhood"], JSON_DATA["removed_properties_since_last_report_neighborhood"] = 0,0
+
     else:
         JSON_DATA["total_properties_neighborhood"] = len(df_new[df_new["normalized_neighborhood"] == neighborhood])
         JSON_DATA["average_price_neighborhood"] = str(df_new[df_new["normalized_neighborhood"] == neighborhood]["price"].mean().astype(int))
         JSON_DATA["min_price_neighborhood"] = str(df_new[df_new["normalized_neighborhood"] == neighborhood]["price"].min().astype(int))
         JSON_DATA["max_price_neighborhood"] = str(df_new[df_new["normalized_neighborhood"] == neighborhood]["price"].max().astype(int))
+        JSON_DATA["new_properties_since_last_report_neighborhood"], JSON_DATA["removed_properties_since_last_report_neighborhood"] = calculate_new_and_removed_properties_neighborhood(df_old, df_new, neighborhood)
+
 
     JSON_STRING = json.dumps(JSON_DATA)
     s3_object_key = f"{FINAL_METRIC_FOLDER}/{neighborhood}/metrics.json"
