@@ -8,6 +8,7 @@ import numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import seaborn as sns
 import uuid
 import warnings
@@ -17,6 +18,10 @@ warnings.simplefilter(action='ignore', category=Warning)
 # Historic files https://drive.google.com/drive/folders/1UkCzBmz6YhaU8IKC0AuWHqGEUAMnVcBr
 HISTORIC_FILE_FOLER = "reporting/historic_files"
 REPORT_PICTURE_FOLDER = "reporting/report_pictures"
+
+# Configuración para guardar archivos localmente o en S3
+SAVE_LOCAL = False  # Cambiar a True para guardar localmente
+LOCAL_SAVE_PATH = "./report_output"  # Ruta local donde se guardarán los gráficos
 
 now = datetime.now()
 formatted_date = now.strftime("%m_%Y")
@@ -323,18 +328,27 @@ def extract_year_month(file):
 
 # Sección Upload
 def upload_image_to_s3(bucket_name, key, plt):
-    img_buffer = BytesIO()
-    plt.savefig(img_buffer, format='png')
-    plt.close()
-    img_buffer.seek(0)
+    if SAVE_LOCAL:
+        # Guardar localmente
+        local_file_path = os.path.join(LOCAL_SAVE_PATH, key)
+        os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+        plt.savefig(local_file_path, format='png', transparent=True, bbox_inches='tight')
+        plt.close()
+        print(f"Saved image locally to {local_file_path}")
+    else:
+        # Guardar en S3
+        img_buffer = BytesIO()
+        plt.savefig(img_buffer, format='png', transparent=True, bbox_inches='tight')
+        plt.close()
+        img_buffer.seek(0)
 
-    s3_client.put_object(
-        Bucket=bucket_name,
-        Key=key,
-        Body=img_buffer,
-        ContentType="image/png"
-    )
-    print(f"Uploaded image to s3://{BUCKET_NAME}/{key}")
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=key,
+            Body=img_buffer,
+            ContentType="image/png"
+        )
+        print(f"Uploaded image to s3://{BUCKET_NAME}/{key}")
 
 # Sección Info estadística
 def generate_price_m2_evolution_graph(bucket_name, folder_name, df, neighborhood):
@@ -352,23 +366,20 @@ def generate_price_m2_evolution_graph(bucket_name, folder_name, df, neighborhood
 
     df_grouped = df_grouped[df_grouped['Mes'] >= formatted_date]
 
-    # Definir colores para cada zona
-    colores = {
-        neighborhood: "blue"
-    }
-
     # Crear la figura y el gráfico
-    plt.figure(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))
     sns.set_style("whitegrid")
 
-    for zona, color in colores.items():
-        subset = df_grouped[df_grouped['Barrio'] == zona]
-        plt.plot(subset['Mes'], subset['Mediana.por.m2.a.precios.corrientes'], marker='o', label=zona, color=color)
+    subset = df_grouped[df_grouped['Barrio'] == neighborhood]
+    
+    # Plotear la línea
+    line_color = '#947FFF'
+    ax.plot(subset['Mes'], subset['Mediana.por.m2.a.precios.corrientes'], 
+            marker='o', color=line_color, linewidth=2.5, markersize=7, alpha=0.9)
 
-    # Configurar etiquetas y título
-    plt.xlabel("Mes")
-    plt.ylabel("Precio por m2")
-    plt.title("Evolución de Precios de Alquiler")
+    # Configurar etiquetas
+    ax.set_xlabel("Mes", fontsize=12)
+    ax.set_ylabel("Precio por m2", fontsize=12)
     plt.xticks(rotation=45)
 
     upload_image_to_s3(bucket_name, folder_name + "price_by_m2_evolution.png", plt)
@@ -388,23 +399,20 @@ def generate_price_evolution_graph(bucket_name, folder_name, df, neighborhood):
 
     df_grouped = df_grouped[df_grouped['Mes'] >= formatted_date]
 
-    # Definir colores para cada zona
-    colores = {
-        neighborhood: "blue"
-    }
-
     # Crear la figura y el gráfico
-    plt.figure(figsize=(12, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))
     sns.set_style("whitegrid")
 
-    for zona, color in colores.items():
-        subset = df_grouped[df_grouped['Barrio'] == zona]
-        plt.plot(subset['Mes'], subset['Mediana.a.precios.corrientes'], marker='o', label=zona, color=color)
+    subset = df_grouped[df_grouped['Barrio'] == neighborhood]
+    
+    # Plotear la línea
+    line_color = '#947FFF'
+    ax.plot(subset['Mes'], subset['Mediana.a.precios.corrientes'], 
+            marker='o', color=line_color, linewidth=2.5, markersize=7, alpha=0.9)
 
-    # Configurar etiquetas y título
-    plt.xlabel("Mes")
-    plt.ylabel("Precio promedio")
-    plt.title("Evolución de Precios de Alquiler")
+    # Configurar etiquetas
+    ax.set_xlabel("Mes", fontsize=12)
+    ax.set_ylabel("Precio promedio", fontsize=12)
     plt.xticks(rotation=45)
 
     upload_image_to_s3(bucket_name, folder_name + "price_evolution.png", plt)
@@ -423,31 +431,32 @@ def generate_bar_charts(df, bucket_name, folder_name):
     df_filtered['price_per_m2'] = df_filtered['price'] / df_filtered['total_area']
     avg_price_per_m2 = df_filtered.groupby('room_category')['price_per_m2'].mean()
 
+    # Colores del gradiente
+    bar_colors = ['#8DA8FF', '#947FFF', '#D57BFF', '#FF9999']
+
     # Gráfico de barras - Promedio de precio por cantidad de ambientes
     plt.figure(figsize=(10, 5))
-    ax = avg_price.plot(kind='bar', color='skyblue', edgecolor='black')
+    ax = avg_price.plot(kind='bar', color=bar_colors[:len(avg_price)], edgecolor='none', alpha=0.7)
     # Agregar valores encima de cada barra
     for i, value in enumerate(avg_price):
         ax.text(i, value + (value * 0.02), f'{value:,.0f}', ha='center', fontsize=10, fontweight='bold')
-    plt.title(f'Promedio de Precio por Cantidad de Ambientes para CABA')
-    plt.xlabel('Cantidad de Ambientes')
-    plt.ylabel('Precio Promedio ($)')
+    plt.xlabel('Cantidad de Ambientes', fontsize=12)
+    plt.ylabel('Precio Promedio ($)', fontsize=12)
     plt.xticks(rotation=0)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.grid(axis='y', linestyle='--', alpha=0.3)
     upload_image_to_s3(bucket_name, folder_name + "bar_price_by_amb.png", plt)
 
 
     # Gráfico de barras - Precio por metro cuadrado por cantidad de ambientes
     plt.figure(figsize=(10, 5))
-    ax = avg_price_per_m2.plot(kind='bar', color='skyblue', edgecolor='black')
+    ax = avg_price_per_m2.plot(kind='bar', color=bar_colors[:len(avg_price_per_m2)], edgecolor='none', alpha=0.7)
     # Agregar valores encima de cada barra
     for i, value in enumerate(avg_price_per_m2):
         ax.text(i, value + (value * 0.02), f'{value:,.0f}', ha='center', fontsize=10, fontweight='bold')
-    plt.title('Precio por Metro Cuadrado por Cantidad de Ambientes para CABA')
-    plt.xlabel('Cantidad de Ambientes')
-    plt.ylabel('Precio por m² Promedio ($)')
+    plt.xlabel('Cantidad de Ambientes', fontsize=12)
+    plt.ylabel('Precio por m² Promedio ($)', fontsize=12)
     plt.xticks(rotation=0)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.grid(axis='y', linestyle='--', alpha=0.3)
     upload_image_to_s3(bucket_name, folder_name + "bar_m2_price_by_amb.png", plt)
 
 def generate_bar_charts_neighborhood(df, neighborhood, bucket_name, folder_name):
@@ -468,30 +477,31 @@ def generate_bar_charts_neighborhood(df, neighborhood, bucket_name, folder_name)
     df_filtered['price_per_m2'] = df_filtered['price'] / df_filtered['total_area']
     avg_price_per_m2 = df_filtered.groupby('room_category')['price_per_m2'].mean()
 
+    # Colores del gradiente
+    bar_colors = ['#8DA8FF', '#947FFF', '#D57BFF', '#FF9999']
+
     # Gráfico de barras - Promedio de precio por cantidad de ambientes
     plt.figure(figsize=(10, 5))
-    ax = avg_price.plot(kind='bar', color='skyblue', edgecolor='black')
+    ax = avg_price.plot(kind='bar', color=bar_colors[:len(avg_price)], edgecolor='none', alpha=0.7)
     # Agregar valores encima de cada barra
     for i, value in enumerate(avg_price):
         ax.text(i, value + (value * 0.02), f'{value:,.0f}', ha='center', fontsize=10, fontweight='bold')
-    plt.title(f'Promedio de Precio por Cantidad de Ambientes para {neighborhood}')
-    plt.xlabel('Cantidad de Ambientes')
-    plt.ylabel('Precio Promedio ($)')
+    plt.xlabel('Cantidad de Ambientes', fontsize=12)
+    plt.ylabel('Precio Promedio ($)', fontsize=12)
     plt.xticks(rotation=0)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.grid(axis='y', linestyle='--', alpha=0.3)
     upload_image_to_s3(bucket_name, folder_name + "bar_price_by_amb_neighborhood.png", plt)
 
     # Gráfico de barras - Precio por metro cuadrado por cantidad de ambientes
     plt.figure(figsize=(10, 5))
-    ax = avg_price_per_m2.plot(kind='bar', color='skyblue', edgecolor='black')
+    ax = avg_price_per_m2.plot(kind='bar', color=bar_colors[:len(avg_price_per_m2)], edgecolor='none', alpha=0.7)
     # Agregar valores encima de cada barra
     for i, value in enumerate(avg_price_per_m2):
         ax.text(i, value + (value * 0.02), f'{value:,.0f}', ha='center', fontsize=10, fontweight='bold')
-    plt.title('Precio por Metro Cuadrado por Cantidad de Ambientes para {}'.format(neighborhood))
-    plt.xlabel('Cantidad de Ambientes')
-    plt.ylabel('Precio por m² Promedio ($)')
+    plt.xlabel('Cantidad de Ambientes', fontsize=12)
+    plt.ylabel('Precio por m² Promedio ($)', fontsize=12)
     plt.xticks(rotation=0)
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.grid(axis='y', linestyle='--', alpha=0.3)
     upload_image_to_s3(bucket_name, folder_name + "bar_m2_price_by_amb_neighborhood.png", plt)
 
 def generate_pie_charts(df, bucket_name, folder_name):
@@ -503,21 +513,27 @@ def generate_pie_charts(df, bucket_name, folder_name):
     # Contar la cantidad de propiedades por categoría de ambientes
     room_distribution = df_filtered['room_category'].value_counts()
 
-    # Función para mostrar tanto el porcentaje como la cantidad
-    def autopct_format(pct, all_vals):
-        absolute = int(round(pct/100.*sum(all_vals)))
-        return f"{pct:.1f}%\n({absolute})"
+    # Colores del gradiente con transparencia
+    pie_colors = ['#8DA8FF', '#947FFF', '#D57BFF', '#FF9999']
 
-    # Generar gráfico de torta (pie chart)
-    plt.figure(figsize=(8, 8))
-    plt.pie(
+    # Generar gráfico de dona (donut chart)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    wedges, texts = ax.pie(
         room_distribution, 
-        labels=room_distribution.index, 
-        autopct=lambda pct: autopct_format(pct, room_distribution), 
-        colors=['skyblue', 'lightcoral', 'gold', 'lightgreen'], 
-        startangle=140
+        colors=pie_colors[:len(room_distribution)], 
+        startangle=90,
+        wedgeprops=dict(width=0.5, alpha=0.8)  # width < 1 crea el efecto donut
     )
-    plt.title(f'Distribución de Propiedades por Cantidad de Ambientes CABA')
+    
+    # Crear leyenda con porcentajes
+    labels = [f"{cat} Amb.\n{pct:.0f}%" 
+              for cat, pct in zip(room_distribution.index, 
+                                   100 * room_distribution / room_distribution.sum())]
+    
+    ax.legend(labels, loc='center', bbox_to_anchor=(0.5, -0.1), 
+              ncol=len(room_distribution), frameon=False, fontsize=11)
+    
+    plt.tight_layout()
     upload_image_to_s3(bucket_name, folder_name + "pie_property_amb_distribution.png", plt)
 
 def generate_pie_charts_neighborhood(df, neighborhood, bucket_name, folder_name):
@@ -533,21 +549,27 @@ def generate_pie_charts_neighborhood(df, neighborhood, bucket_name, folder_name)
     # Contar la cantidad de propiedades por categoría de ambientes
     room_distribution = df_filtered['room_category'].value_counts()
 
-    # Función para mostrar tanto el porcentaje como la cantidad
-    def autopct_format(pct, all_vals):
-        absolute = int(round(pct/100.*sum(all_vals)))
-        return f"{pct:.1f}%\n({absolute})"
+    # Colores del gradiente
+    pie_colors = ['#8DA8FF', '#947FFF', '#D57BFF', '#FF9999']
 
-    # Generar gráfico de torta (pie chart)
-    plt.figure(figsize=(8, 8))
-    plt.pie(
+    # Generar gráfico de dona (donut chart)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    wedges, texts = ax.pie(
         room_distribution, 
-        labels=room_distribution.index, 
-        autopct=lambda pct: autopct_format(pct, room_distribution), 
-        colors=['skyblue', 'lightcoral', 'gold', 'lightgreen'], 
-        startangle=140
+        colors=pie_colors[:len(room_distribution)], 
+        startangle=90,
+        wedgeprops=dict(width=0.5, alpha=0.8)  # width < 1 crea el efecto donut
     )
-    plt.title(f'Distribución de Propiedades por Cantidad de Ambientes {neighborhood}')
+    
+    # Crear leyenda con porcentajes
+    labels = [f"{cat} Amb.\n{pct:.0f}%" 
+              for cat, pct in zip(room_distribution.index, 
+                                   100 * room_distribution / room_distribution.sum())]
+    
+    ax.legend(labels, loc='center', bbox_to_anchor=(0.5, -0.1), 
+              ncol=len(room_distribution), frameon=False, fontsize=11)
+    
+    plt.tight_layout()
     upload_image_to_s3(bucket_name, folder_name + "pie_property_amb_distribution_neighborhood.png", plt)
 
 def generate_pie_charts_m2_neighborhood(df, neighborhood, bucket_name, folder_name):
@@ -580,33 +602,27 @@ def generate_pie_charts_m2_neighborhood(df, neighborhood, bucket_name, folder_na
     # Asegurarse de que las categorías estén en el orden deseado
     area_distribution = area_distribution.reindex(desired_order).fillna(0)
 
-    # Función para mostrar el porcentaje con el formato deseado
-    def autopct_format(pct, all_vals):
-        absolute = int(round(pct / 100. * sum(all_vals)))
-        return f"{pct:.1f}%\n({absolute})"
+    # Colores del gradiente
+    pie_colors = ['#8DA8FF', '#947FFF', '#D57BFF', '#FF9999']
 
-    # Generar gráfico de torta (pie chart)
-    plt.figure(figsize=(8, 8))
-    plt.pie(
+    # Generar gráfico de dona (donut chart)
+    fig, ax = plt.subplots(figsize=(10, 8))
+    wedges, texts = ax.pie(
         area_distribution, 
-        labels=area_distribution.index, 
-        autopct=lambda pct: autopct_format(pct, area_distribution) if pct > 0 else "",  
-        colors=['#81B4F9', '#F29100', '#F6C75C', '#4A91F1'], 
-        startangle=140,
-        labeldistance=None
+        colors=pie_colors, 
+        startangle=90,
+        wedgeprops=dict(width=0.5, alpha=0.8)  # width < 1 crea el efecto donut
     )
 
-    # Cambiar los textos para poner en negrita
-    for text in plt.gca().texts:
-        text.set_fontsize(12)  
-        text.set_fontweight('bold')  
+    # Crear leyenda con porcentajes
+    labels = [f"{cat}\n{pct:.0f}%" 
+              for cat, pct in zip(area_distribution.index, 
+                                   100 * area_distribution / area_distribution.sum())]
+    
+    ax.legend(labels, loc='center', bbox_to_anchor=(0.5, -0.1), 
+              ncol=len(area_distribution), frameon=False, fontsize=11)
 
-    # Agregar leyenda en el orden deseado
-    plt.legend(area_distribution.index, title="Rango de m2", loc="upper left", bbox_to_anchor=(0.8, 1))
-
-    plt.axis('equal')
-
-    plt.title(f'Distribución de Propiedades por Rango de m2 {neighborhood}')
+    plt.tight_layout()
     upload_image_to_s3(bucket_name, folder_name + "pie_property_m2_distribution_neighborhood.png", plt)
 
 
