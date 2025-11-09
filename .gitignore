@@ -9,6 +9,10 @@ samconfig.toml
 *.png
 *.xlsx
 
+# Report output folder
+Reporting/report_output/
+report_output/
+
 # Model files
 *.joblib
 *.pkl
