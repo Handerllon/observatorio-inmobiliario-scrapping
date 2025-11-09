@@ -360,10 +360,9 @@ def generate_owner_trends(df_old, df_new, neighborhood):
     price_change = ((avg_price_new - avg_price_old) / avg_price_old * 100) if avg_price_old > 0 else 0
     
     trend_direction = "aumentaron" if price_change > 0 else "disminuyeron"
-    trend_emoji = "📈" if price_change > 0 else "📉"
     
     trends.append({
-        "title": f"{trend_emoji} Evolución de Precios en {neighborhood}",
+        "title": f"Evolución de Precios en {neighborhood}",
         "description": f"Los precios promedio de alquiler en {neighborhood} {trend_direction} un {abs(price_change):.1f}% desde el último reporte. El precio promedio actual es de ${avg_price_new:,.0f}, comparado con ${avg_price_old:,.0f} anteriormente. Esta tendencia indica {'una revalorización' if price_change > 0 else 'una oportunidad de ajuste'} en la zona.",
         "value": f"{price_change:+.1f}%",
         "metric_type": "price_trend"
@@ -378,7 +377,7 @@ def generate_owner_trends(df_old, df_new, neighborhood):
     competition_level = "alta" if competition_rate > 40 else "moderada" if competition_rate > 25 else "baja"
     
     trends.append({
-        "title": f"🏘️ Competencia en el Mercado de {neighborhood}",
+        "title": f"Competencia en el Mercado de {neighborhood}",
         "description": f"Actualmente hay {total_properties} propiedades disponibles en {neighborhood}. Las propiedades de {int(avg_rooms)} ambientes representan el {competition_rate:.1f}% del mercado ({similar_properties} unidades), indicando una competencia {competition_level}. {'Destacar características únicas de tu propiedad será clave para diferenciarte.' if competition_level == 'alta' else 'Existe una buena oportunidad para posicionar tu propiedad en el mercado.'}",
         "value": f"{total_properties} propiedades",
         "metric_type": "competition"
@@ -392,7 +391,7 @@ def generate_owner_trends(df_old, df_new, neighborhood):
     position = "por encima" if m2_diff > 0 else "por debajo"
     
     trends.append({
-        "title": f"💰 Valor por m² en {neighborhood}",
+        "title": f"Valor por m² en {neighborhood}",
         "description": f"El precio promedio por m² en {neighborhood} es de ${price_per_m2_neigh:,.0f}, lo que está {abs(m2_diff):.1f}% {position} del promedio general de CABA (${price_per_m2_global:,.0f}/m²). Esto {'refleja la valorización de la zona' if m2_diff > 0 else 'representa una oportunidad competitiva'} y {'justifica precios premium por ubicación y servicios' if m2_diff > 5 else 'sugiere ajustar la estrategia de precios según características específicas'}.",
         "value": f"${price_per_m2_neigh:,.0f}/m²",
         "metric_type": "price_per_m2"
@@ -409,7 +408,7 @@ def generate_owner_trends(df_old, df_new, neighborhood):
     market_speed = "rápida" if rotation_rate > 30 else "moderada" if rotation_rate > 15 else "lenta"
     
     trends.append({
-        "title": f"⚡ Velocidad del Mercado en {neighborhood}",
+        "title": f"Velocidad del Mercado en {neighborhood}",
         "description": f"La rotación del mercado en {neighborhood} es {market_speed}, con {new_listings} propiedades nuevas y {removed_listings} propiedades retiradas desde el último reporte. Una rotación del {rotation_rate:.1f}% indica {'alta demanda y movimiento constante' if rotation_rate > 30 else 'un mercado estable con oportunidades' if rotation_rate > 15 else 'un mercado selectivo donde la paciencia es clave'}. {'Las propiedades bien presentadas se alquilan rápidamente.' if rotation_rate > 30 else 'Tómate tiempo para optimizar tu estrategia de marketing.' if rotation_rate < 15 else 'Un pricing competitivo puede acelerar el proceso.'}",
         "value": f"{rotation_rate:.1f}% rotación",
         "metric_type": "market_rotation"
@@ -424,7 +423,7 @@ def generate_owner_trends(df_old, df_new, neighborhood):
     avg_price_segment = df_new_neigh[df_new_neigh['rooms'] == top_segment]['price'].mean()
     
     trends.append({
-        "title": f"🎯 Segmento Más Demandado en {neighborhood}",
+        "title": f"Segmento Más Demandado en {neighborhood}",
         "description": f"Las propiedades de {int(top_segment)} ambientes dominan el mercado en {neighborhood}, representando el {top_segment_pct:.1f}% de la oferta ({int(top_segment_count)} unidades). El precio promedio para este segmento es de ${avg_price_segment:,.0f}. {'Si tu propiedad coincide con este perfil, estás en el segmento con mayor visibilidad.' if top_segment_pct > 35 else 'Aunque no es el segmento dominante, existen nichos específicos con menos competencia.'}",
         "value": f"{int(top_segment)} ambientes",
         "metric_type": "top_segment"
@@ -453,7 +452,7 @@ def generate_agent_trends(df_old, df_new, neighborhood):
     opportunity_level = "Alta" if abs(growth_rate) > 10 else "Moderada" if abs(growth_rate) > 5 else "Estable"
     
     trends.append({
-        "title": f"📊 Dinámica del Mercado en {neighborhood}",
+        "title": f"Dinámica del Mercado en {neighborhood}",
         "description": f"El mercado de alquileres en {neighborhood} está {growth_status} con un cambio del {growth_rate:+.1f}% en la oferta de propiedades. {'Esto indica una zona con alta actividad y oportunidades para captar nuevos clientes propietarios.' if growth_rate > 5 else 'La estabilidad del mercado permite construir relaciones duraderas con clientes.' if abs(growth_rate) <= 5 else 'La contracción puede indicar propiedades alquiladas rápidamente o retiradas del mercado.'} Nivel de oportunidad: {opportunity_level}.",
         "value": f"{growth_rate:+.1f}%",
         "metric_type": "market_growth"
@@ -478,7 +477,7 @@ def generate_agent_trends(df_old, df_new, neighborhood):
         top_room, top_price, top_count, price_gap = 2, 0, 0, 0
     
     trends.append({
-        "title": f"💼 Segmentación de Precios en {neighborhood}",
+        "title": f"Segmentación de Precios en {neighborhood}",
         "description": f"El segmento de {int(top_room)} ambientes lidera el mercado con {int(top_count)} propiedades y un precio promedio de ${top_price:,.0f}. {'Existe una diferencia de precio significativa entre segmentos, lo que permite estrategias de posicionamiento diferenciadas.' if abs(price_gap) > 15 else 'Los precios entre segmentos son relativamente uniformes, facilitando comparaciones directas.'} Identificar el segmento objetivo de cada cliente es clave para maximizar conversiones.",
         "value": f"${top_price:,.0f}",
         "metric_type": "price_segmentation"
@@ -497,7 +496,7 @@ def generate_agent_trends(df_old, df_new, neighborhood):
     position_desc = "más económico" if competitive_position < -5 else "similar" if abs(competitive_position) <= 5 else "más premium"
     
     trends.append({
-        "title": f"🗺️ Posición Competitiva de {neighborhood}",
+        "title": f"Posición Competitiva de {neighborhood}",
         "description": f"{neighborhood} se posiciona como un barrio {position_desc} comparado con zonas competidoras (diferencia: {competitive_position:+.1f}%). Con un precio promedio de ${avg_price_neigh:,.0f} vs ${avg_price_competitors:,.0f} en barrios similares, {'puedes destacar el valor competitivo y ubicación estratégica' if competitive_position < 0 else 'debes enfatizar las ventajas exclusivas y calidad de vida' if competitive_position > 5 else 'tienes flexibilidad para argumentar tanto precio como valor agregado'}.",
         "value": f"{competitive_position:+.1f}%",
         "metric_type": "competitive_position"
@@ -519,7 +518,7 @@ def generate_agent_trends(df_old, df_new, neighborhood):
         min_competition_pct = 0
     
     trends.append({
-        "title": f"📦 Disponibilidad de Inventario en {neighborhood}",
+        "title": f"Disponibilidad de Inventario en {neighborhood}",
         "description": f"Actualmente hay {total_properties} propiedades activas en {neighborhood}. Distribución: {inventory_summary}. El segmento de {int(min_competition_segment)} ambientes tiene menor competencia ({min_competition_pct:.1f}% del mercado), {'representando una oportunidad para enfocarse en este nicho' if min_competition_pct < 20 else 'aunque todos los segmentos muestran actividad'}. Mantén un pipeline diversificado para atender diferentes perfiles de inquilinos.",
         "value": f"{total_properties} unidades",
         "metric_type": "inventory"
@@ -538,7 +537,7 @@ def generate_agent_trends(df_old, df_new, neighborhood):
     best_value_avg = best_value_properties['price_per_m2'].mean()
     
     trends.append({
-        "title": f"📏 Análisis de Valor por m² en {neighborhood}",
+        "title": f"Análisis de Valor por m² en {neighborhood}",
         "description": f"El precio por m² en {neighborhood} {'aumentó' if m2_trend > 0 else 'disminuyó'} un {abs(m2_trend):.1f}%, alcanzando ${new_price_m2:,.0f}/m². {'Esta apreciación indica valorización de la zona' if m2_trend > 2 else 'La estabilidad facilita la negociación' if abs(m2_trend) <= 2 else 'Esto presenta oportunidades para propietarios flexibles'}. Las propiedades con mejor relación precio/m² promedian ${best_value_avg:,.0f}/m², ideales para inquilinos conscientes del presupuesto.",
         "value": f"${new_price_m2:,.0f}/m²",
         "metric_type": "price_per_m2_trend"
@@ -569,7 +568,7 @@ def generate_tenant_trends(df_old, df_new, neighborhood):
     action_recommendation = "Es un buen momento para buscar y negociar." if price_change < 0 else "Los precios están subiendo, considera asegurar pronto." if price_change > 5 else "El mercado está estable, negocia según tu presupuesto."
     
     trends.append({
-        "title": f"⏰ Momento de Mercado en {neighborhood}",
+        "title": f"Momento de Mercado en {neighborhood}",
         "description": f"El momento actual para alquilar en {neighborhood} es {timing_status}. Los precios {'bajaron' if price_change < 0 else 'subieron'} un {abs(price_change):.1f}% desde el último reporte (${avg_price_old:,.0f} → ${avg_price_new:,.0f}). {action_recommendation} {'Aprovecha las oportunidades disponibles antes de que cambien las condiciones.' if timing_status == 'favorable' else 'Mantente atento a nuevas publicaciones.' if timing_status == 'menos favorable' else 'Compara múltiples opciones para encontrar la mejor relación calidad-precio.'}",
         "value": f"{price_change:+.1f}%",
         "metric_type": "timing"
@@ -581,7 +580,7 @@ def generate_tenant_trends(df_old, df_new, neighborhood):
     availability_status = "alta" if total_available > 50 else "moderada" if total_available > 20 else "limitada"
     
     trends.append({
-        "title": f"🏠 Disponibilidad en {neighborhood}",
+        "title": f"Disponibilidad en {neighborhood}",
         "description": f"Actualmente hay {total_available} propiedades disponibles en {neighborhood}, con {new_listings} publicaciones nuevas desde el último reporte. La disponibilidad es {availability_status}, lo que {'te da múltiples opciones para comparar y elegir' if availability_status == 'alta' else 'requiere que actúes rápido en propiedades que te interesen' if availability_status == 'limitada' else 'permite una búsqueda selectiva'}. {'Aprovecha la variedad para negociar mejores condiciones.' if total_available > 50 else 'Programa visitas cuanto antes para no perder oportunidades.' if total_available < 20 else 'Toma tu tiempo pero mantente atento a nuevas publicaciones.'}",
         "value": f"{total_available} propiedades",
         "metric_type": "availability"
@@ -600,7 +599,7 @@ def generate_tenant_trends(df_old, df_new, neighborhood):
     savings_pct = ((avg_price_new - best_deals_avg) / avg_price_new * 100) if best_deals_avg > 0 else 0
     
     trends.append({
-        "title": f"💸 Mejores Oportunidades en {neighborhood}",
+        "title": f"Mejores Oportunidades en {neighborhood}",
         "description": f"Identificamos {best_deals_count} propiedades con precios competitivos (hasta ${price_threshold:,.0f}), con un promedio de ${best_deals_avg:,.0f} y ${best_deals_m2:,.0f}/m². Estas oportunidades representan un ahorro de hasta {savings_pct:.1f}% respecto al precio promedio de la zona (${avg_price_new:,.0f}). {'Estas propiedades suelen alquilarse rápido' if best_deals_count < 10 else 'Tienes buenas opciones para comparar'}, así que {'agenda visitas inmediatamente' if best_deals_count < 10 else 'evalúa características adicionales como ubicación y estado'}.",
         "value": f"${best_deals_avg:,.0f}",
         "metric_type": "best_deals"
@@ -644,7 +643,7 @@ def generate_tenant_trends(df_old, df_new, neighborhood):
         premium_pct = 0
     
     trends.append({
-        "title": f"🏗️ Perfil de Propiedades en {neighborhood}",
+        "title": f"Perfil de Propiedades en {neighborhood}",
         "description": f"El tipo de propiedad más común en {neighborhood} son las {top_size['label'] if size_distribution else 'N/A'} con {int(top_size['count']) if size_distribution else 0} unidades disponibles. {size_summary}. Además, el {premium_pct:.0f}% de las propiedades cuentan con características premium como más de un baño o cochera. {'Hay buena variedad de opciones para diferentes necesidades de espacio' if len(size_distribution) >= 3 else 'La oferta está concentrada en un tipo específico de propiedad'}.",
         "value": f"{int(top_size['count']) if size_distribution else 0} en segmento principal",
         "metric_type": "property_profile"
@@ -661,7 +660,7 @@ def generate_tenant_trends(df_old, df_new, neighborhood):
     urgency = "alta" if rotation_rate > 40 else "moderada" if rotation_rate > 25 else "baja"
     
     trends.append({
-        "title": f"⚡ Ritmo del Mercado en {neighborhood}",
+        "title": f"Ritmo del Mercado en {neighborhood}",
         "description": f"El mercado en {neighborhood} es {market_speed}, con {removed_listings} propiedades alquiladas o retiradas desde el último reporte (rotación del {rotation_rate:.1f}%). {'Las propiedades se alquilan rápidamente, por lo que debes actuar con agilidad' if rotation_rate > 40 else 'Hay movimiento constante, mantente atento a nuevas publicaciones' if rotation_rate > 25 else 'Tienes tiempo para evaluar opciones con calma'}. Urgencia recomendada: {urgency}. {'Prepara tu documentación con anticipación para cerrar rápido.' if urgency == 'alta' else 'Visita varias opciones antes de decidir.' if urgency == 'baja' else 'Equilibra análisis con prontitud en la decisión.'}",
         "value": f"{rotation_rate:.1f}% rotación",
         "metric_type": "market_speed"
