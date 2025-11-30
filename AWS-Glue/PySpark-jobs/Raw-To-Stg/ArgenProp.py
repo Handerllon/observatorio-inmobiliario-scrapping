@@ -1,3 +1,7 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col
+from datetime import datetime
+
 from awsglue.context import GlueContext
 from awsglue.utils import getResolvedOptions
 from pyspark.context import SparkContext
@@ -6,27 +10,68 @@ import pyspark.sql.functions as F
 from pyspark.sql.types import DoubleType
 from awsglue.job import Job
 
-#sc = SparkContext()
-#glueContext = GlueContext(sc)
-#spark = glueContext.spark_session
+
+
+def log(level, message):
+    levels = ["INFO", "WARNING", "ERROR"]
+    if level not in levels:
+        raise ValueError(f"Invalid log level: {level}. Use one of {levels}.")
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{timestamp}] [{level}] {message}")
+
+def generate_raw_file_spark(spark: SparkSession, source_database: str, table_name: str, utput_path: str):
+    """
+    Reads a CSV file from input_path (S3), removes duplicates,
+    and writes the result as Parquet to output_path (S3).
+    
+    Args:
+        input_path (str): S3 path to input CSV (e.g. "s3a://my-bucket/input/file.csv").
+        output_path (str): S3 path to save output Parquet (e.g. "s3a://my-bucket/output/raw/")
+    """
+
+    log("INFO", f"Starting Spark job: generate_raw_file_spark from {input_path}")
+
+    #df = spark.read.option("header", "true").csv(input_path)
+    # 1. Leer desde Data Catalog
+    df = glueContext.create_dynamic_frame.from_catalog(
+        database=SOURCE_DATABASE,
+        table_name=SOURCE_TABLE
+    ).toDF()
+
+    log("INFO", f"Original data: {df.count()} rows")
+
+    # Drop duplicates by `argenprop_code`
+    df_dedup = df.dropDuplicates(["argenprop_code"])
+    log("INFO", f"Unique data: {df_dedup.count()} rows")
+
+    # Save as Parquet
+    df_dedup.write.mode("overwrite").parquet(output_path)
+    log("INFO", f"Saved cleaned data to {output_path}")
+
+    spark.stop()
+    log("INFO", "Spark job completed.")
+
 sc = SparkContext.getOrCreate()
 glueContext = GlueContext(sc)
 spark = glueContext.spark_session
 job = Job(glueContext)
 
 # Parámetros
-SOURCE_DATABASE = "zonaprop_db"
+SOURCE_PATH = args['SOURCE_PATH']
+DEST_PATH = args['DEST_PATH']
+
+SOURCE_DATABASE = "argenprop_db"
 SOURCE_TABLE = "raw"
-VALOR_DOLAR = 1300
-NOW = datetime.now().strftime('%Y-%m-%d')
-S3_OUTPUT_PATH = f"s3://../data/zonaprop/stg/"
+
+#NOW = datetime.now().strftime('%Y-%m-%d')
+S3_OUTPUT_PATH = f"s3://observatorio-inmobiliario-v2/data/zonaprop/stg/"
 
 # 1. Leer desde Data Catalog
 df = glueContext.create_dynamic_frame.from_catalog(
     database=SOURCE_DATABASE,
     table_name=SOURCE_TABLE
 ).toDF()
-
 # 2. Separar 'location' en 'neighborhood' y 'location'
 df = df.withColumn("neighborhood", F.split("location", ",").getItem(0)) \
        .withColumn("location", F.lit("Capital Federal"))

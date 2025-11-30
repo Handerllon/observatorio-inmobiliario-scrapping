@@ -35,8 +35,13 @@ else:
     log("INFO", "Output directory already exists!")
 
 # Inicializamos el proceso de scraping
-start_scrapping("data/zonaprop/raw/" + RAW_FILE, PAGES_SCRAPPED, s3_client, BUCKET_NAME)
+#start_scrapping("data/zonaprop/raw/" + RAW_FILE, PAGES_SCRAPPED, s3_client, BUCKET_NAME)
 #generate_raw_file("scrapping/ZonaProp/STOCK/" + STOCK_FILE, "scrapping/ZonaProp/RAW/" + RAW_FILE, s3_client, BUCKET_NAME)
-#generate_stg_file("scrapping/ZonaProp/RAW/" + RAW_FILE, "scrapping/ZonaProp/STG/" + STG_FILE, s3_client, BUCKET_NAME)
+# generate_stg_file("scrapping/ZonaProp/RAW/" + RAW_FILE, "scrapping/ZonaProp/STG/" + STG_FILE, s3_client, BUCKET_NAME)
+
+from utils import generate_local_stg_file
+# local process
+RAW_FILE = "RAW_ZonaProp_12022025.csv"
+generate_local_stg_file(RAW_FILE)
 
 

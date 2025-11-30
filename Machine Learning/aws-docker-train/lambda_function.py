@@ -66,6 +66,7 @@ MODEL_FILE_OUT_OHE = "/tmp/model_ohe_"+LATEST+".joblib"
 # Define model output filename
 S3_MODEL_KEY = f"models/model_ohe_{LATEST}.joblib"
 
+
 def train_ohe():
     """
         Modelo único para todo el dataset. Ej: CABA
