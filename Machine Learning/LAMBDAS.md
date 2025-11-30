@@ -124,7 +124,8 @@ docker build --platform linux/amd64 -t <IMAGE_NAME> .
 
 # 2. Login a ECR
 aws ecr get-login-password --region us-east-2 --profile uade-valorar | \
-  docker login --username AWS --password-stdin 650532183679.dkr.ecr.us-east-2.amazonaws.com
+  export ACCOUNT_ID=$(aws sts get-caller-identity --profile "$AWS_PROFILE" --query Account --output text)
+  docker login --username AWS --password-stdin "$ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com"
 
 # 3. Tag de la imagen
 docker tag <IMAGE_NAME>:latest <ECR_REPO>:latest
@@ -308,19 +309,20 @@ aws ecr create-repository \
 ```toml
 [default.deploy.parameters]
 stack_name = "valorar-inference-py12"  # Nombre único
-image_repositories = ["ohe=650532183679.dkr.ecr.us-east-2.amazonaws.com/valorar-inference-ohe-py12"]
+image_repositories = ["ohe=<account-id>.dkr.ecr.us-east-2.amazonaws.com/valorar-inference-ohe-py12"]
 ```
 
 3. **Actualizar `template.yaml`**:
 ```yaml
 Properties:
   PackageType: Image
-  ImageUri: 650532183679.dkr.ecr.us-east-2.amazonaws.com/valorar-inference-ohe-py12:latest
+  ImageUri: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/valorar-inference-ohe-py12:latest"
 ```
 
 4. **Actualizar `deploy-manual.sh`**:
 ```bash
-ECR_REPO="650532183679.dkr.ecr.us-east-2.amazonaws.com/valorar-inference-ohe-py12"
+ACCOUNT_ID=${ACCOUNT_ID:-$(aws sts get-caller-identity --profile "$AWS_PROFILE" --query Account --output text)}
+ECR_REPO="$ACCOUNT_ID.dkr.ecr.us-east-2.amazonaws.com/valorar-inference-ohe-py12"
 STACK_NAME="valorar-inference-py12"
 ```
 
