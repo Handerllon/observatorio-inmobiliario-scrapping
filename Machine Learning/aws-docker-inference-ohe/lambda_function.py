@@ -46,12 +46,24 @@ LOCAL_MODEL_PATH = "/tmp/last_model.joblib"  # Temporary local storage
 
 files = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
 sub_files = list()
+print(f"Listing files in bucket: {BUCKET_NAME}")
+
+if "Contents" not in files:
+    raise Exception(f"No files found in bucket: {BUCKET_NAME}")
+
 for file in files["Contents"]:
+    print(f"Checking file: {file['Key']}")
     if ("models" in file["Key"]) and (".joblib" in file["Key"]) and ("_wo_" not in file["Key"] and ("by-neighborhood" not in file["Key"]) ):
         sub_files.append(file["Key"])
+        print(f"  ✓ Added to candidates: {file['Key']}")
+
+print(f"Candidate model files found: {len(sub_files)}")
+if len(sub_files) == 0:
+    raise Exception(f"No model files found matching criteria. Expected files in 'models/' folder with .joblib extension (excluding '_wo_' and 'by-neighborhood')")
 
 sorted_files = sorted(sub_files, key=extract_date, reverse=True)
-MODEL_KEY = sorted_files[:1][0]
+MODEL_KEY = sorted_files[0]
+print(f"Selected model: {MODEL_KEY}")
 
 # Download the model from S3
 print(f"Downloading from s3://{BUCKET_NAME}/{MODEL_KEY}")

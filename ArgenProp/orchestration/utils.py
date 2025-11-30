@@ -169,7 +169,9 @@ def generate_local_stg_file(in_path):
     # except Exception as e:
     #     log("ERROR", f"Error in fetching the dollar value: {e}")
     #     return
-    VALOR_DOLAR = 1200 # FEB 2025
+    #VALOR_DOLAR = 1200 # 15 FEB 2025
+    VALOR_DOLAR = 1425 # 6 nov 2025
+    print("Using VALOR_DOLAR = {}".format(VALOR_DOLAR))
 
     # En Location tenemos la ubicación y el barrio, vamos a separarlos
     df[['neighborhood', 'location']] = df['location'].str.split(",", expand=True)

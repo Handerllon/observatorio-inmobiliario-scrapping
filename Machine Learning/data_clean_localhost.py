@@ -7,23 +7,52 @@ from io import StringIO
 from datetime import datetime
 from difflib import get_close_matches
 
-date = datetime.now().strftime('%d%m%Y')
-CLEANED_FILE = f"full_stg_extract_cleaned_{date}.csv"
-OUTPUT_FILE = "machine_learning/data/full/" + CLEANED_FILE
+#date = datetime.now().strftime('%d%m%Y')
+#CLEANED_FILE = f"full_stg_extract_cleaned_{date}.csv"
+#OUTPUT_FILE = "machine_learning/data/full/" + CLEANED_FILE
 
 # Obtenemos los últimos archivos de cada una de las fuentes
 def extract_date(file):
     date_part = file.split('_')[-1].replace('.csv', '')  # Get "04022025"
-    return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
+    #return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
+    return date_part
+
+import glob
+# Local file pattern matching
+
+import glob
+
+zonaprop_file = ""
+# Local file pattern matching
+matching_files = glob.glob("STG_ZonaProp_*.csv")
+if len(matching_files) > 1:
+    raise ValueError(f"Error: Multiple files found matching pattern 'STG_ZonaProp_*.csv': {matching_files}")
+elif len(matching_files) == 1:
+    zonaprop_file = matching_files[0]
+    print(f"Using local file: {matching_files}")
+else:
+    zonaprop_file = None
+    print("No local file matching 'STG_ZonaProp_*.csv' found, will use S3")
 
 
-# Empezamos por ZonaProp
-zonaprop_file = "STG_ZonaProp_12022025.csv"
 print("Using zonaprop file {}".format(zonaprop_file))
 
-#date = extract_date(zonaprop_file)
+date = extract_date(zonaprop_file)
+CLEANED_FILE = f"full_stg_extract_cleaned_{date}.csv"
+OUTPUT_FILE = "machine_learning/data/full/" + CLEANED_FILE
 
-argenprop_file = "STG_ArgenProp_13022025.csv"
+argenprop_file = ""
+# Local file pattern matching
+matching_files = glob.glob("STG_ArgenProp_*.csv")
+if len(matching_files) > 1:
+    raise ValueError(f"Error: Multiple files found matching pattern 'STG_ArgenProp_*.csv': {matching_files}")
+elif len(matching_files) == 1:
+    argenprop_file = matching_files[0]
+    print(f"Using local file: {matching_files}")
+else:
+    argenprop_file = None
+    print("No local file matching 'STG_ArgenProp_*.csv' found, will use S3")
+
 print("Using argenprop file {}".format(argenprop_file))
 
 #response = s3_client.get_object(Bucket=BUCKET_NAME, Key=zonaprop_file)

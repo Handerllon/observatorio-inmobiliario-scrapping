@@ -41,7 +41,22 @@ else:
 
 from utils import generate_local_stg_file
 # local process
-RAW_FILE = "RAW_ZonaProp_12022025.csv"
+RAW_FILE = "" # local process
+
+import glob
+# Local file pattern matching
+matching_files = glob.glob("RAW_ZonaProp_*.csv")
+if len(matching_files) > 1:
+    raise ValueError(f"Error: Multiple files found matching pattern 'RAW_ZonaProp_*.csv': {matching_files}")
+elif len(matching_files) == 1:
+    RAW_FILE = matching_files[0]
+    print(f"Using local file: {RAW_FILE}")
+else:
+    RAW_FILE = None
+    print("No local file matching 'RAW_ZonaProp_*.csv' found, will use S3")
+
+print("Processing file: {}".format(RAW_FILE))
+
 print("WARNING: Tener en cuenta el valor dolar de la fecha del archivo RAW: {}".format(RAW_FILE))
 generate_local_stg_file(RAW_FILE)
 

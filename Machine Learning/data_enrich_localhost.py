@@ -10,7 +10,20 @@ from datetime import datetime
 date = datetime.now().strftime('%d%m%Y')
 #today
 
-full_fule = "cleaned_zonaprop_argenprop_30112025.csv"
+import glob
+
+full_fule = ""
+# Local file pattern matching
+matching_files = glob.glob("cleaned_zonaprop_argenprop_*.csv")
+if len(matching_files) > 1:
+    raise ValueError(f"Error: Multiple files found matching pattern 'cleaned_zonaprop_argenprop_*.csv': {matching_files}")
+elif len(matching_files) == 1:
+    full_fule = matching_files[0]
+    print(f"Using local file: {matching_files}")
+else:
+    full_fule = None
+    print("No local file matching 'cleaned_zonaprop_argenprop_*.csv' found, will use S3")
+
 print("Using input file {}".format(full_fule))
 
 
