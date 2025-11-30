@@ -1,0 +1,6 @@
+# No incluir boto3 - ya viene en Lambda runtime
+numpy==1.23.5
+scipy==1.10.1
+scikit-learn==1.2.1
+joblib==1.2.0
+pandas==1.5.3
