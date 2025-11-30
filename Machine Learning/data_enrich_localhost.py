@@ -8,37 +8,26 @@ from io import StringIO
 from datetime import datetime
 
 date = datetime.now().strftime('%d%m%Y')
-FINAL_FILE = f"ml_ready_{date}.csv"
-FINAL_FILE_OHE = f"ml_ready_ohe_{date}.csv"
-OUTPUT_FILE = "machine_learning/data/ml_ready/" + FINAL_FILE
-OUTPUT_FILE_OHE = "machine_learning/data/ml_ready_ohe/" + FINAL_FILE_OHE
+#today
 
-load_dotenv()
-session = boto3.Session(
-    aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-    aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY_ID')
-)
-s3_client = session.client('s3')
-BUCKET_NAME = os.getenv('BUCKET_NAME')
+full_fule = "cleaned_zonaprop_argenprop_30112025.csv"
+print("Using input file {}".format(full_fule))
+
 
 # Obtenemos los últimos full de base de información
 def extract_date(file):
     date_part = file.split('_')[-1].replace('.csv', '')  # Get "04022025"
     return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
 
-files = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
-sub_files = list()
-for file in files["Contents"]:
-    if ("machine_learning/data/full/" in file["Key"]) and (".csv" in file["Key"]):
-        sub_files.append(file["Key"])
+date = extract_date(full_fule)
+FINAL_FILE = f"ml_ready_{date}.csv"
+FINAL_FILE_OHE = f"ml_ready_ohe_{date}.csv"
+# OUTPUT_FILE = "machine_learning/data/ml_ready/" + FINAL_FILE
+# OUTPUT_FILE_OHE = "machine_learning/data/ml_ready_ohe/" + FINAL_FILE_OHE
 
-sorted_files = sorted(sub_files, key=extract_date, reverse=True)
-full_fule = sorted_files[:1][0]
-print("Using input file {}".format(full_fule))
 
-response = s3_client.get_object(Bucket=BUCKET_NAME, Key=full_fule)
-csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
-df = pd.read_csv(StringIO(csv_data))
+
+df = pd.read_csv(full_fule)
 
 # Primero realizamos una limpieza de valores que no tienen sentido o
 # no nos servirían para la porción de Machine Learning
@@ -115,17 +104,13 @@ print(df.shape)
 # borramos la columna de barrio
 df_simple = df.drop(columns=['neighborhood'])
 # Enviamos info a un archivo csv para trabajar en el siguiente paso
-csv_buffer_simple = StringIO()
+csv_buffer_simple = FINAL_FILE
 df_simple.to_csv(csv_buffer_simple, index=False)
-print("Uploading simple data to S3")
-s3_client.put_object(Bucket=BUCKET_NAME, Key=OUTPUT_FILE, Body=csv_buffer_simple.getvalue())
+print("Cleaned data saved to {}".format(csv_buffer_simple))
 
 # Output 2: Guardamos el dataset limpio con one hot encoding
 df_ohe = pd.get_dummies(df, columns=['neighborhood'])
 # Enviamos info a un archivo csv para trabajar en el siguiente paso
-csv_buffer_ohe = StringIO()
+csv_buffer_ohe = FINAL_FILE_OHE
 df_ohe.to_csv(csv_buffer_ohe, index=False)
-print("Uploading ohe data to S3")
-s3_client.put_object(Bucket=BUCKET_NAME, Key=OUTPUT_FILE_OHE, Body=csv_buffer_ohe.getvalue())
-
-
+print("OHE cleaned data saved to {}".format(csv_buffer_ohe))

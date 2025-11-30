@@ -16,20 +16,23 @@ def extract_date(file):
     date_part = file.split('_')[-1].replace('.csv', '')  # Get "04022025"
     return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
 
+
 # Empezamos por ZonaProp
 zonaprop_file = "STG_ZonaProp_12022025.csv"
 print("Using zonaprop file {}".format(zonaprop_file))
+
+#date = extract_date(zonaprop_file)
 
 argenprop_file = "STG_ArgenProp_13022025.csv"
 print("Using argenprop file {}".format(argenprop_file))
 
 #response = s3_client.get_object(Bucket=BUCKET_NAME, Key=zonaprop_file)
 #csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
-df_zonaprop = pd.read_csv(argenprop_file)
+df_zonaprop = pd.read_csv(zonaprop_file)
 
 #response = s3_client.get_object(Bucket=BUCKET_NAME, Key=argenprop_file)
 #csv_data = response['Body'].read().decode('utf-8')  # Convert bytes to string
-df_argenprop = pd.read_csv(StringIO(csv_data))
+df_argenprop = pd.read_csv(argenprop_file)
 
 df = pd.concat([df_zonaprop, df_argenprop], ignore_index=True)
 
