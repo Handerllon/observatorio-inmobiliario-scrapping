@@ -31,6 +31,6 @@ echo "Pushing image to ECR..."
 docker push $ECR_REPO:$IMAGE_TAG
 
 echo "Deploying with SAM..."
-sam deploy --stack-name $STACK_NAME --region $REGION --capabilities CAPABILITY_IAM --resolve-s3
+sam deploy --stack-name $STACK_NAME --region $REGION --capabilities CAPABILITY_IAM --resolve-s3 --profile "$AWS_PROFILE"
 
 echo "Deployment complete!"
