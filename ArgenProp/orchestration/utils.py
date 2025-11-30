@@ -163,12 +163,13 @@ def generate_local_stg_file(in_path):
 
     log("INFO", f"Generating STG file from {in_path}")
 
-    try:
-        res = requests.get("https://dolarapi.com/v1/dolares/blue")
-        VALOR_DOLAR = res.json()["compra"]
-    except Exception as e:
-        log("ERROR", f"Error in fetching the dollar value: {e}")
-        return
+    # try:
+    #     res = requests.get("https://dolarapi.com/v1/dolares/blue")
+    #     VALOR_DOLAR = res.json()["compra"]
+    # except Exception as e:
+    #     log("ERROR", f"Error in fetching the dollar value: {e}")
+    #     return
+    VALOR_DOLAR = 1200 # FEB 2025
 
     # En Location tenemos la ubicación y el barrio, vamos a separarlos
     df[['neighborhood', 'location']] = df['location'].str.split(",", expand=True)

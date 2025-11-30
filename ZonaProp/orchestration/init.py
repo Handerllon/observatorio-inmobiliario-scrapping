@@ -42,6 +42,7 @@ else:
 from utils import generate_local_stg_file
 # local process
 RAW_FILE = "RAW_ZonaProp_12022025.csv"
+print("WARNING: Tener en cuenta el valor dolar de la fecha del archivo RAW: {}".format(RAW_FILE))
 generate_local_stg_file(RAW_FILE)
 
 
