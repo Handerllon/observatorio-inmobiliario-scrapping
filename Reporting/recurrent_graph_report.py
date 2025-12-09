@@ -319,8 +319,15 @@ def map_neighborhood(neighborhood):
     return match[0] if match else 'OTRO'
 
 def extract_date(file):
-    date_part = file.split('_')[-1].replace('.csv', '')  # Get "04022025"
-    return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
+    # Extraer la fecha de la estructura de carpetas ingest_date=YYYY-mm-dd
+    # Ejemplo: data/raw/zonaprop/ingest_date=2025-12-09/RAW_ZonaProp.csv
+    if 'ingest_date=' in file:
+        date_part = file.split('ingest_date=')[1].split('/')[0]  # Get "2025-12-09"
+        return pd.to_datetime(date_part, format="%Y-%m-%d")  # Convert to datetime
+    else:
+        # Fallback para archivos antiguos con formato nombre_fecha.csv
+        date_part = file.split('_')[-1].replace('.csv', '')  # Get "04022025"
+        return pd.to_datetime(date_part, format="%d%m%Y")  # Convert to datetime
 
 def extract_year_month(file):
     date_part = file.split('_')[-1].replace('.xlsx', '')  # Get "202501"
